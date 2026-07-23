@@ -1,14 +1,14 @@
 {
   "functions": {
-    "api/stats/index.py": {
-      "runtime": "python3.11"
-    },
-    "api/pool/index.py": {
-      "runtime": "python3.11"
-    }
+    "api/stats/index.py": { "runtime": "python3.11" },
+    "api/pool/index.py": { "runtime": "python3.11" }
   },
   "routes": [
-    { "src": "/api/stats", "dest": "/api/stats/index.py" },
-    { "src": "/api/pool/(.*)", "dest": "/api/pool/index.py" }
+    { "src": "/api/stats", "dest": "/api/stats/index.py", "methods": ["GET", "OPTIONS"] },
+    { "src": "/api/pool/(.*)", "dest": "/api/pool/index.py" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ],
+  "headers": [
+    { "source": "/api/(.*)", "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }, { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" }, { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }] }
   ]
 }
