@@ -119,9 +119,6 @@
                 <label for="sendAmount">Сумма (RUC)</label>
                 <input type="text" id="sendAmount" placeholder="0.1">
               </div>
-              <div style="font-size: 0.75em; color: var(--text-secondary);">
-                Комиссия сети: <span id="feeDisplay">0.1%</span>
-              </div>
               <button class="btn" onclick="handleSend()">Отправить</button>
               <div id="sendStatus" class="status"></div>
             </div>
@@ -262,7 +259,7 @@ function handleSend() {
     return;
   }
   status.className = 'status success show';
-  status.textContent = `Отправлено ${result.tx.amount.toFixed(4)} RUC (комиссия: ${result.tx.fee.toFixed(4)} RUC)`;
+    status.textContent = `Отправлено ${result.tx.amount.toFixed(4)} RUC`;
   document.getElementById('sendTo').value = '';
   document.getElementById('sendAmount').value = '';
   renderView();
@@ -328,7 +325,6 @@ function renderHistory() {
       </div>
       <div style="text-align: right;">
         <div class="tx-amount ${cls}">${sign}${tx.amount.toFixed(4)} RUC</div>
-        ${tx.fee ? `<div class="tx-info">комиссия ${tx.fee.toFixed(4)} RUC</div>` : ''}
       </div>
     </div>`;
   }).join('');

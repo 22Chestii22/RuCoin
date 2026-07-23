@@ -378,7 +378,7 @@ function getBalance() {
   let balance = 0;
   for (const tx of txs) {
     if (tx.type === 'receive' || tx.type === 'mining') balance += tx.amount;
-    if (tx.type === 'send') balance -= (tx.amount + (tx.fee || 0));
+    if (tx.type === 'send') balance -= tx.amount;
   }
   return Math.max(0, balance);
 }
@@ -389,12 +389,10 @@ function sendRuc(to, amount) {
   amount = parseFloat(amount);
   if (isNaN(amount) || amount <= 0) return { error: 'Invalid amount' };
   const balance = getBalance();
-  const fee = 0.001 * amount;
-  const total = amount + fee;
-  if (total > balance) return { error: `Insufficient balance. Need ${total.toFixed(4)} RUC, have ${balance.toFixed(4)}` };
+  if (amount > balance) return { error: `Insufficient balance. Need ${amount.toFixed(4)} RUC, have ${balance.toFixed(4)}` };
   if (!to || to.length < 10) return { error: 'Invalid recipient address' };
   const wallet = loadWallet();
-  const tx = { type: 'send', from: wallet.address, to, amount, fee, time: Date.now() };
+  const tx = { type: 'send', from: wallet.address, to, amount, fee: 0, time: Date.now() };
   const txs = addTx(tx);
   localStorage.setItem('rucoin_txs', JSON.stringify(txs));
   return { success: true, tx };
