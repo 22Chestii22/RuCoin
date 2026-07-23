@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════
    RuCoin Wallet — Browser-based
-   Secret Key Entry · localStorage
+   Secret Key Only · localStorage
    ═══════════════════════════════════════ */
 
 /* ──── Crypto helpers ──── */
@@ -20,8 +20,8 @@ async function secretToAddress(secretKey) {
   return 'RUC' + toHex(addrHash).slice(0, 40).toUpperCase();
 }
 
-function isValidAddress(addr) {
-  return /^RUC[A-F0-9]{40}$/i.test(addr.trim());
+function isValidSecretKey(key) {
+  return /^[a-fA-F0-9]{64}$/.test(key.trim());
 }
 
 /* ──── Storage ──── */
@@ -73,11 +73,11 @@ function sendRuc(to, amount) {
   if (isNaN(amount) || amount <= 0) return { error: 'Неверная сумма' };
   const balance = getBalance();
   if (amount > balance) return { error: `Недостаточно средств. На балансе ${balance.toFixed(4)} RUC` };
-  if (!to || !isValidAddress(to)) return { error: 'Неверный адрес получателя' };
+  if (!to || !/^RUC[A-F0-9]{40}$/i.test(to.trim())) return { error: 'Неверный адрес получателя' };
   const wallet = loadWallet();
   if (!wallet) return { error: 'Кошелёк не загружен' };
   const tx = { type: 'send', from: wallet.address, to: to.trim().toUpperCase(), amount, fee: 0, time: Date.now() };
-  const txs = addTx(tx);
+  addTx(tx);
   return { success: true, tx };
 }
 
@@ -94,7 +94,7 @@ function addMiningReward(amount = 0.1) {
 
 window.RuCoin = {
   secretToAddress,
-  isValidAddress,
+  isValidSecretKey,
   saveWallet,
   loadWallet,
   clearWallet,
