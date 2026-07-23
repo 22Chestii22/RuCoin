@@ -7,13 +7,31 @@ RuCoin — Proof-of-Streebog Miner
 Эмиссия: 256 000 000 RUC
 Награда: 2048 RUC/блок, халвинг каждые 62 500 блоков
 Стрибог-256 на аппаратном токене JaCarta (без пароля!)
+
+Режимы:
+  --solo    Соло-майнинг (по умолчанию)
+  --pool    Пул-майнинг через HTTP/JSON API
+  --worker  Имя воркера (обязательно для пула)
 """
 
-import subprocess, json, time, struct, sys, os, codecs, hashlib
+import argparse
+import subprocess
+import json
+import time
+import struct
+import sys
+import os
+import codecs
+import hashlib
 from datetime import datetime, timezone
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
+
+try:
+    import requests
+except ImportError:
+    requests = None
 
 # ═══ Параметры эмиссии ═══
 
@@ -25,6 +43,7 @@ SATOSHI = 0.00000001
 DIFFICULTY = 3
 WALLET_FILE = "rucoin_wallet.pem"
 CHAIN_FILE = "rucoin_chain.json"
+POOL_URL = "https://rucoin.vercel.app/api/pool"
 
 PKCS11_PATHS = {
     "linux":  "/usr/lib/libjcPKCS11-2.so",
@@ -33,6 +52,16 @@ PKCS11_PATHS = {
     "cygwin": "jcPKCS11-2.dll",
     "darwin": "/Library/Frameworks/jcPKCS11-2.framework/jcPKCS11-2",
 }
+
+
+def parse_args():
+    p = argparse.ArgumentParser(description="RuCoin Streebog Miner")
+    p.add_argument("--solo", action="store_true", help="Соло-майнинг (по умолчанию)")
+    p.add_argument("--pool", action="store_true", help="Пул-майнинг через HTTP API")
+    p.add_argument("--worker", type=str, default="", help="Имя воркера (обязательно для пула)")
+    p.add_argument("--pool-url", type=str, default=POOL_URL, help="URL пула")
+    p.add_argument("--stats", action="store_true", help="Показать статистику сети и выйти")
+    return p.parse_args()
 
 
 def detect_module() -> str:
@@ -73,7 +102,6 @@ def pkcs11(*args, timeout=30) -> bytes:
 
 
 def get_token_serial() -> str:
-    """Получает серийный номер токена через pkcs11-tool -L."""
     out = pkcs11("-L")
     for line in out.decode().splitlines():
         line_lower = line.lower()
@@ -85,7 +113,6 @@ def get_token_serial() -> str:
 
 
 def derive_keys(serial: str) -> tuple[str, str]:
-    """Секретный ключ и публичный адрес от серийного номера токена."""
     secret_key = hashlib.sha256(f"rucoin_secret_{serial}".encode()).hexdigest()
     address_hash = hashlib.sha256(secret_key.encode()).hexdigest()[:40].upper()
     return secret_key, f"RUC{address_hash}"
@@ -107,12 +134,9 @@ def streebog_hash(data: bytes) -> bytes:
 
 
 def get_or_create_wallet() -> tuple[bytes, str]:
-    """Возвращает (private_key_pem, address). Адрес берётся из токена."""
-    # Читаем токен для адреса
     serial = get_token_serial()
     _, address = derive_keys(serial)
 
-    # RSA ключ только для подписи транзакций (если понадобится)
     if os.path.exists(WALLET_FILE):
         with open(WALLET_FILE, "rb") as f:
             key = serialization.load_pem_private_key(f.read(), password=None, backend=default_backend())
@@ -141,7 +165,6 @@ class Block:
         self.hash = ""
 
     def serialize(self) -> bytes:
-        """Блок в байты для хэширования."""
         data = struct.pack(">IQ", self.index, self.timestamp)
         data += self.prev_hash.encode()
         data += json.dumps(self.txns, sort_keys=True).encode()
@@ -149,13 +172,11 @@ class Block:
         return data
 
     def compute_hash(self) -> str:
-        """Считает хэш блока через Стрибог на токене."""
         raw = self.serialize()
         h = streebog_hash(raw)
         return h.hex()
 
     def mine(self, difficulty: int):
-        """Перебирает nonce пока хэш не начнётся с difficulty нулей."""
         target = "0" * difficulty
         start = time.time()
         hashes = 0
@@ -183,19 +204,56 @@ class Block:
 CHAIN_FILE = "rucoin_chain.json"
 
 
-def reward_for_block(index: int) -> float:
-    """Считает награду за блок с учётом халвинга.
+# ═══ Pool API (HTTP/JSON) ═══
 
-    Награда уменьшается вдвое каждые HALVING_INTERVAL блоков.
-    2048 → 1024 → 512 → ... → 0.5 → 0.25 → ... → 0.00000001
+def pool_get_job(pool_url: str, worker: str) -> dict:
+    """Получает job от пула: height, prev_hash, difficulty, target."""
+    if requests is None:
+        return {"error": "requests library not installed (pip install requests)"}
+    try:
+        r = requests.post(f"{pool_url}/job", json={"worker": worker}, timeout=10)
+        if r.ok:
+            return r.json()
+        return {"error": f"HTTP {r.status_code}: {r.text}"}
+    except Exception as e:
+        return {"error": str(e)}
 
-    Останавливается, когда награда становится меньше 1 сатоши.
-    """
+
+def pool_submit_share(pool_url: str, worker: str, block: dict, address: str) -> dict:
+    """Отправляет найденный блок/шер в пул."""
+    if requests is None:
+        return {"error": "requests library not installed"}
+    try:
+        r = requests.post(f"{pool_url}/submit", json={
+            "worker": worker,
+            "block": block,
+            "address": address
+        }, timeout=10)
+        if r.ok:
+            return r.json()
+        return {"error": f"HTTP {r.status_code}: {r.text}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def pool_get_stats(pool_url: str) -> dict:
+    """Получает статистику пула для веб-страницы."""
+    if requests is None:
+        return {"error": "requests library not installed"}
+    try:
+        r = requests.get(f"{pool_url}/stats", timeout=5)
+        if r.ok:
+            return r.json()
+        return {"error": f"HTTP {r.status_code}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# ═══ Блокчейн ═══
     epoch = index // HALVING_INTERVAL
     reward = INITIAL_REWARD >> epoch
     min_reward = SATOSHI
     if reward < min_reward:
-        # дробная часть — используем float для sub-1 RUC
         reward = INITIAL_REWARD / (2 ** epoch)
         if reward < min_reward:
             return 0.0
@@ -207,7 +265,6 @@ def halving_epoch(index: int) -> int:
 
 
 def total_mined(chain_len: int) -> int:
-    """Сколько всего RUC добыто с учётом всех халвингов."""
     total = 0
     for i in range(chain_len):
         total += reward_for_block(i)
@@ -237,95 +294,232 @@ def show_halving_info(index: int):
     print(f"   ── Добыто: {total_mined_supply:.0f} / {TOTAL_SUPPLY} RUC ({pct:.2f}%)")
 
 
+# ═══ Пул-майнинг ═══
+
+def pool_submit_share(pool_url: str, worker: str, block_data: dict, address: str) -> dict:
+    """Отправляет найденный блок/шер на пул."""
+    if requests is None:
+        raise RuntimeError("requests не установлен: pip install requests")
+    payload = {
+        "worker": worker,
+        "address": address,
+        "block": block_data,
+        "timestamp": int(time.time()),
+    }
+    try:
+        r = requests.post(f"{pool_url}/submit", json=payload, timeout=10)
+        return r.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def pool_get_job(pool_url: str, worker: str) -> dict:
+    """Получает задание от пула (текущая высота, prev_hash, difficulty)."""
+    if requests is None:
+        raise RuntimeError("requests не установлен")
+    try:
+        r = requests.get(f"{pool_url}/job", params={"worker": worker}, timeout=10)
+        return r.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def pool_get_stats(pool_url: str) -> dict:
+    if requests is None:
+        return {"error": "requests not installed"}
+    try:
+        r = requests.get(f"{pool_url}/stats", timeout=5)
+        return r.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def print_network_stats():
+    """Показывает статистику сети (для флага --stats)."""
+    chain = load_chain()
+    if not chain:
+        print("Сеть пуста (нет блоков)")
+        return
+
+    height = len(chain) - 1
+    last_block = chain[-1]
+    reward = reward_for_block(height)
+    epoch = halving_epoch(height)
+    next_halving = HALVING_INTERVAL - (height % HALVING_INTERVAL)
+    total = total_mined(len(chain))
+
+    # Оценка network hashrate по последним 10 блокам
+    hashrate = 0.0
+    if len(chain) >= 2:
+        recent = chain[-10:]
+        if len(recent) >= 2:
+            time_diff = recent[-1]["timestamp"] - recent[0]["timestamp"]
+            blocks = len(recent)
+            if time_diff > 0:
+                # hash rate = blocks * 2^DIFFICULTY / time
+                hashrate = (blocks * (2 ** DIFFICULTY)) / time_diff
+            else:
+                hashrate = 0
+        else:
+            hashrate = 0
+    else:
+        hashrate = 0
+
+    print("═══ RuCoin Network Stats ═══")
+    print(f"Chain height     : {height}")
+    print(f"Current reward   : {reward} RUC")
+    print(f"Halving epoch    : #{epoch}")
+    print(f"Next halving in  : {next_halving} blocks")
+    print(f"Total mined      : {total:.2f} / {TOTAL_SUPPLY} RUC ({(total/TOTAL_SUPPLY)*100:.2f}%)")
+    print(f"Difficulty       : {DIFFICULTY} leading zeros")
+    print(f"Network hashrate : ~{hashrate:.2f} H/s (estimate)")
+    print("═══════════════════════════")
+
+
+# ═══ Main ═══
+
 def main():
+    args = parse_args()
+
+    if args.stats:
+        print_network_stats()
+        return
+
+    # Режим: по умолчанию соло, если указан --pool — пул
+    mode = "pool" if args.pool else "solo"
+
+    if mode == "pool" and not args.worker:
+        print("❌ Для пул-майнинга укажите --worker ВАШ_НИК")
+        sys.exit(1)
+
+    if not args.worker:
+        raw = input("Имя воркера (Enter = Satoshi): ").strip() or "Satoshi"
+        try:
+            worker = codecs.decode(raw, 'unicode_escape')
+        except Exception:
+            worker = raw
+    else:
+        worker = args.worker
+
     print("═══════════════════════════════════════")
     print("  RuCoin — Proof-of-Streebog Miner")
     print(f"  Platform: {sys.platform}")
-    print(f"  Эмиссия: {TOTAL_SUPPLY} RUC")
-    print(f"  Старт: {INITIAL_REWARD} RUC/блок, халвинг каждые {HALVING_INTERVAL} блоков")
+    print(f"  Mode      : {'Pool' if mode == 'pool' else 'Solo'}")
+    print(f"  Worker    : {worker}")
+    print(f"  Emission  : {TOTAL_SUPPLY} RUC")
+    print(f"  Start     : {INITIAL_REWARD} RUC/block, halving every {HALVING_INTERVAL} blocks")
     print("═══════════════════════════════════════\n")
 
     try:
         mod = detect_module()
         print(f"✅ PKCS#11: {mod}")
     except SystemExit:
-        print("❌ JaCarta библиотека не найдена.\n"
-              "   Установи: https://www.aladdin-rd.ru/support/downloads/jacarta/")
+        print("❌ JaCarta library not found.\n   Get it: https://www.aladdin-rd.ru/support/downloads/jacarta/")
         sys.exit(1)
 
-    print("🚀 Проверяю Стрибог...")
+    print("🚀 Checking Streebog...")
     streebog_hash(b"rucoin_test")
-    print("✅ Стрибог-256 работает (без пароля!)\n")
+    print("✅ Streebog-256 works (no PIN!)\n")
 
-    raw_name = input("Имя воркера (Enter = Satoshi): ").strip() or "Satoshi"
-    try:
-        worker_name = codecs.decode(raw_name, 'unicode_escape')
-    except Exception:
-        worker_name = raw_name
-    print(worker_name)
-
-    print()
-    pubkey, address = get_or_create_wallet()
-    print(f"💳 Адрес: {address}")
-    print(f"🔑 Ключ: {WALLET_FILE}\n")
+    _, address = get_or_create_wallet()
+    print(f"💳 Address: {address}")
+    print(f"🔑 Key file: {WALLET_FILE}\n")
 
     chain = load_chain()
     if chain:
-        print(f"📦 Цепь: {len(chain)} блоков")
+        print(f"📦 Chain: {len(chain)} blocks")
         start_index = chain[-1]["index"] + 1
         prev_hash = chain[-1]["hash"]
     else:
-        print("📦 Цепь: новая")
+        print("📦 Chain: new")
         genesis_reward = reward_for_block(0)
         genesis = Block(0, [{"coinbase": address, "amount": genesis_reward}], "0" * 64)
-        print(f"   Майню genesis block (награда: {genesis_reward} RUC)...")
+        print(f"   Mining genesis block (reward: {genesis_reward} RUC)...")
         t, r = genesis.mine(DIFFICULTY)
         genesis.hash = genesis.compute_hash()
         chain.append(genesis.to_dict())
         save_chain(chain)
-        print(f"   ✅ Genesis block намайнен ({t:.1f}s, {r:.2f} H/s)")
+        print(f"   ✅ Genesis mined ({t:.1f}s, {r:.2f} H/s)")
         start_index = 1
         prev_hash = genesis.hash
 
     show_halving_info(start_index)
-    print(f"\n⛏️  Майнинг... сложность: {DIFFICULTY} нуля")
+    print(f"\n⛏️  Mining... difficulty: {DIFFICULTY} leading zeros")
+    if mode == "pool":
+        print(f"   Pool: {args.pool_url}")
     block_num = start_index
     total_hashes = 0
-    total_time = 0
+    total_time = 0.0
+
+    # Для пула: пробуем получить job при старте
+    pool_job = None
+    if mode == "pool":
+        print("   Fetching pool job...")
+        job = pool_get_job(args.pool_url, worker)
+        if "error" not in job:
+            pool_job = job
+            print(f"   ✅ Pool job: height={job.get('height')}, diff={job.get('difficulty')}")
+        else:
+            print(f"   ⚠️  Pool unavailable: {job.get('error')}, falling back to solo logic")
 
     try:
         while True:
             txn_reward = reward_for_block(block_num)
             txn = [{"coinbase": address, "amount": txn_reward}]
-            b = Block(block_num, txn, prev_hash)
+
+            # Для пула используем prev_hash из job'а, если есть
+            current_prev = prev_hash
+            current_diff = DIFFICULTY
+            if mode == "pool" and pool_job:
+                current_prev = pool_job.get("prev_hash", prev_hash)
+                current_diff = pool_job.get("difficulty", DIFFICULTY)
+
+            b = Block(block_num, txn, current_prev)
             start_t = time.time()
-            elapsed, rate = b.mine(DIFFICULTY)
+            elapsed, rate = b.mine(current_diff)
             total_hashes += 1
             total_time += elapsed
 
             avg = total_hashes / total_time if total_time > 0 else 0
             ts = datetime.now(timezone.utc).strftime("%H:%M:%S")
 
-            print(f"  [{ts}] Блок #{b.index} намайнен! "
-                  f"{elapsed:.1f}s (среднее: ~{avg:.2f} H/s)  "
-                  f"nonce: {b.nonce}  хэш: {b.hash[:16]}...  "
+            print(f"  [{ts}] Block #{b.index} mined! "
+                  f"{elapsed:.1f}s (avg: ~{avg:.2f} H/s)  "
+                  f"nonce: {b.nonce}  hash: {b.hash[:16]}...  "
                   f"+{txn_reward} RUC")
 
+            # Сохраняем локально
             chain.append(b.to_dict())
             save_chain(chain)
             prev_hash = b.hash
             block_num += 1
 
+            # Если пул — отправляем шер/блок
+            if mode == "pool":
+                result = pool_submit_share(args.pool_url, worker, b.to_dict(), address)
+                if "error" in result:
+                    print(f"   ⚠️  Pool submit error: {result['error']}")
+                elif result.get("accepted"):
+                    print(f"   ✅ Pool accepted share! Payout: {result.get('payout', 'pending')} RUC")
+                else:
+                    print(f"   ℹ️  Pool response: {result}")
+
+            # Каждые 10 блоков обновляем job от пула
+            if mode == "pool" and block_num % 10 == 0:
+                job = pool_get_job(args.pool_url, worker)
+                if "error" not in job:
+                    pool_job = job
+
             if block_num % HALVING_INTERVAL == 0:
                 epoch = halving_epoch(block_num)
-                print(f"\n═══ ХАЛВИНГ! Эпоха #{epoch} — награда теперь {reward_for_block(block_num)} RUC ═══\n")
+                print(f"\n═══ HALVING! Epoch #{epoch} — reward now {reward_for_block(block_num)} RUC ═══\n")
 
     except KeyboardInterrupt:
         mined = total_mined(len(chain))
-        print(f"\n\n⏹  Остановлен. Всего блоков: {len(chain)}")
-        print(f"   Добыто: {mined:.2f} RUC / {TOTAL_SUPPLY} RUC ({mined/TOTAL_SUPPLY*100:.4f}%)")
-        print(f"   Адрес: {address}")
-        print(f"   Цепь сохранена в {CHAIN_FILE}")
+        print(f"\n\n⏹  Stopped. Total blocks: {len(chain)}")
+        print(f"   Mined: {mined:.2f} RUC / {TOTAL_SUPPLY} RUC ({mined/TOTAL_SUPPLY*100:.4f}%)")
+        print(f"   Address: {address}")
+        print(f"   Chain saved to {CHAIN_FILE}")
 
 
 if __name__ == "__main__":

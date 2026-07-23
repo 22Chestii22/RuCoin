@@ -1155,6 +1155,89 @@ tr:last-child td { border-bottom: none; }
 }
 
 /* ═══════════════════════════════════════
+   NETWORK STATS & POOL STATS
+   ═══════════════════════════════════════ */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  transition: border-color 0.3s;
+}
+
+.stat-card:hover {
+  border-color: var(--text-secondary);
+}
+
+.stat-card .stat-label {
+  font-family: var(--mono);
+  font-size: 0.65em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.stat-card .stat-value {
+  font-family: var(--serif);
+  font-size: clamp(1.4em, 3vw, 2em);
+  font-weight: 350;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.pool-stats {
+  margin-top: 40px;
+}
+
+.pool-stats h3 {
+  font-family: var(--serif);
+  font-size: 1.4em;
+  font-weight: 400;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+.pool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.pool-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.pool-stat .pool-label {
+  font-family: var(--mono);
+  font-size: 0.6em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.pool-stat .pool-value {
+  font-family: var(--mono);
+  font-size: 1em;
+  font-weight: 450;
+  color: var(--text);
+}
+
+/* ═══════════════════════════════════════
    FOOTER
    ═══════════════════════════════════════ */
 

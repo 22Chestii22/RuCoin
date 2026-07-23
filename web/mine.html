@@ -7,7 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
-  <script src="/wallet.js"></script>
 </head>
 <body>
 
@@ -37,21 +36,80 @@
     <div class="hero-content">
       <span class="eyebrow reveal">Hashing power</span>
       <h1 class="hero-title reveal delay-1" style="font-size: clamp(3em, 8vw, 6em);">Как майнить<br>RuCoin</h1>
-      <p class="hero-sub reveal delay-2">Вам понадобится USB-токен JaCarta (любая модель с поддержкой Стрибога) и компьютер.</p>
+      <p class="hero-sub reveal delay-2">USB-токен JaCarta с аппаратным Стрибогом + Python-скрипт. Соло или пул — на ваш выбор.</p>
     </div>
   </section>
 
-  <!-- ═══ HARDWARE ═══ -->
+  <!-- ═══ NETWORK STATS ═══ -->
   <section class="section-full" style="padding-top: 0;">
     <div class="section-inner">
-      <div class="hardware-card reveal delay-1">
-        <div class="hardware-visual">
-          <span style="font-size: 1.4em; letter-spacing: -0.04em; font-family: var(--sans); font-weight: 300;">USB</span>
+      <div class="stats-grid reveal delay-1">
+        <div class="stat-card">
+          <div class="stat-label">Текущая награда за блок</div>
+          <div class="stat-value" id="blockReward">— RUC</div>
         </div>
-        <div>
-          <h3>JaCarta ГОСТ / JaCarta-2 ГОСТ</h3>
-          <p style="font-size: 0.88em; margin: 6px 0 16px; color: var(--text-secondary);">USB-токен с поддержкой аппаратного хеширования Стрибог (ГОСТ Р 34.11-2012).</p>
+        <div class="stat-card">
+          <div class="stat-label">Следующий халвинг через</div>
+          <div class="stat-value" id="halvingCountdown">—</div>
         </div>
+        <div class="stat-card">
+          <div class="stat-label">Network Hashrate (оценка)</div>
+          <div class="stat-value" id="networkHashrate">— H/s</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Сложность (leading zeros)</div>
+          <div class="stat-value" id="difficulty">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Высота цепочки</div>
+          <div class="stat-value" id="chainHeight">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Всего заминировано</div>
+          <div class="stat-value" id="totalMined">— RUC</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ POOL INFO ═══ -->
+  <section class="section-full">
+    <div class="section-inner">
+      <span class="eyebrow reveal">Пул-майнинг</span>
+      <h2 class="section-title reveal delay-1">RuCoin Pool</h2>
+      <p class="section-sub reveal delay-2">Подключитесь к пулу для стабильных выплат. Минимальный порог выплаты — 1 RUC.</p>
+
+      <div class="pool-stats reveal delay-2">
+        <div class="pool-stat">
+          <span class="pool-label">Pool Hashrate</span>
+          <span class="pool-value" id="poolHashrate">— H/s</span>
+        </div>
+        <div class="pool-stat">
+          <span class="pool-label">Активных майнеров</span>
+          <span class="pool-value" id="poolMiners">—</span>
+        </div>
+        <div class="pool-stat">
+          <span class="pool-label">Последний найденный блок</span>
+          <span class="pool-value" id="poolLastBlock">—</span>
+        </div>
+        <div class="pool-stat">
+          <span class="pool-label">Выплачено всего</span>
+          <span class="pool-value" id="poolPaid">— RUC</span>
+        </div>
+      </div>
+
+      <div class="reveal delay-3" style="margin-top: 32px;">
+        <h3 style="margin-bottom: 12px;">Подключение</h3>
+        <div class="terminal-block"><span class="prompt">$</span> python3 rucoin.py --pool --worker ВАШ_НИК
+<span class="output"># Или для соло-майнинга (по умолчанию):</span>
+<span class="prompt">$</span> python3 rucoin.py --solo --worker ВАШ_НИК</div>
+      </div>
+
+      <div class="reveal delay-4" style="margin-top: 24px;">
+        <p style="font-size: 0.85em; color: var(--text-secondary);">
+          Пул использует упрощённый Stratum-подобный протокол по HTTP/JSON.
+          Адрес пула: <code id="poolUrl">https://rucoin.vercel.app/api/pool</code>
+        </p>
       </div>
     </div>
   </section>
@@ -68,9 +126,7 @@
 <span class="prompt">$</span> <span class="output"># или</span>
 <span class="prompt">$</span> sudo apt install opensc pcscd libp11-dev  <span class="output"># Debian</span>
 
-<span class="output"># Установите драйвер JaCarta:
-# Скачайте libjcPKCS11-2.so с сайта производителя
-# и зарегистрируйте модуль:</span>
+<span class="output"># Драйвер JaCarta (libjcPKCS11-2.so) — скачайте с aladdin-rd.ru</span>
 <span class="prompt">$</span> echo "module: /usr/lib/libjcPKCS11-2.so" | \
   sudo tee /usr/share/p11-kit/modules/jacarta.module</div>
       </div>
@@ -78,13 +134,13 @@
       <div class="reveal delay-3" style="margin-top: 36px;">
         <p style="margin-bottom: 12px;"><strong>macOS</strong></p>
         <div class="terminal-block"><span class="prompt">$</span> brew install opensc
-<span class="prompt">$</span> <span class="output"># Драйвер JaCarta для macOS скачайте с сайта Aladdin</span></div>
+<span class="prompt">$</span> <span class="output"># Драйвер JaCarta для macOS — сайт Aladdin</span></div>
       </div>
 
       <div class="reveal delay-4" style="margin-top: 36px;">
         <p style="margin-bottom: 12px;"><strong>Windows</strong></p>
-        <div class="terminal-block"><span class="output"># Установите OpenSC и драйвер JaCarta
-# PKCS#11 библиотека обычно в C:\Windows\System32\jcPKCS11.dll</span></div>
+        <div class="terminal-block"><span class="output"># Установите OpenSC и драйвер JaCarta</span>
+<span class="output"># PKCS#11 библиотека обычно в C:\Windows\System32\jcPKCS11.dll</span></div>
       </div>
     </div>
   </section>
@@ -96,19 +152,22 @@
       <h2 class="section-title reveal delay-1">Майнинг в одну команду</h2>
 
       <div class="reveal delay-2" style="margin-top: 40px;">
-        <p style="margin-bottom: 16px;">Склонируйте репозиторий и запустите скрипт:</p>
+        <p style="margin-bottom: 16px;">Клонируйте репозиторий и выберите режим:</p>
         <div class="terminal-block"><span class="prompt">$</span> git clone https://github.com/22Chestii22/RuCoin.git
 <span class="prompt">$</span> cd RuCoin
-<span class="prompt">$</span> python3 rucoin.py
-
-<span class="highlight">○ RuCoin Miner v0.1
-[+] Found token: JaCarta-2 GOST (slot 0x1ffff)
-[+] Wallet address: RUC6A2F...B8E1
-[+] Mining block #1 ... hash found!
-[+] Block mined! +0.1 RUC</span></div>
+<span class="prompt">$</span> python3 rucoin.py --pool --worker my_rig    <span class="output"># Пул-майнинг</span>
+<span class="prompt">$</span> python3 rucoin.py --solo --worker my_rig    <span class="output"># Соло-майнинг</span></div>
       </div>
 
-      <p class="reveal delay-3" style="margin-top: 24px;">Каждый найденный блок приносит <strong>0.1 RUC</strong>. Сложность майнинга — найти хеш с 4 ведущими нулями.</p>
+      <div class="reveal delay-3" style="margin-top: 24px;">
+        <p>Флаги:</p>
+        <ul style="margin-top: 8px; line-height: 2; color: var(--text-secondary);">
+          <li><code>--pool</code> — пул-майнинг (подключается к <code>api/pool</code>)</li>
+          <li><code>--solo</code> — соло-майнинг (локальная цепочка, полная награда)</li>
+          <li><code>--worker NAME</code> — имя воркера (для статистики пула)</li>
+          <li><code>--url URL</code> — кастомный эндпоинт пула (опционально)</li>
+        </ul>
+      </div>
     </div>
   </section>
 
@@ -118,8 +177,7 @@
       <span class="eyebrow reveal">Онлайн кошелёк</span>
       <h2 class="section-title reveal delay-1">Следите за балансом<br>в браузере</h2>
       <p class="section-sub reveal delay-2" style="margin: 16px auto 32px;">
-        Необязательно сидеть за компьютером с токеном, чтобы проверить счёт.
-        Откройте кошелёк на телефоне, подключите токен — и вы увидите свои монеты.
+        Запустили майнер — проверяйте баланс по Секретному ключу.
       </p>
       <div class="reveal delay-3">
         <a href="/wallet" class="btn">Открыть кошелёк</a>
@@ -129,9 +187,71 @@
 </main>
 
 <footer>
-  <div style="margin-bottom: 8px;">© 2026 RuCoin · Сделано с мыслью о приватности</div>
+  <div style="margin-bottom: 8px;">© 2026 RuCoin · Proof-of-Streebog</div>
   <div class="watermark-small">◎ R</div>
 </footer>
+
+<script>
+// ── Live Network Stats ──────────────────────────────────────
+async function fetchStats() {
+  try {
+    const res = await fetch('/api/stats');
+    if (!res.ok) throw new Error('stats failed');
+    const data = await res.json();
+    updateStats(data);
+  } catch (e) {
+    console.warn('Stats fetch failed:', e);
+  }
+}
+
+function updateStats(d) {
+  const fmt = (n) => n.toLocaleString('ru-RU');
+  const fmtCompact = (n) => {
+    if (n >= 1e12) return (n/1e12).toFixed(2) + ' TH/s';
+    if (n >= 1e9) return (n/1e9).toFixed(2) + ' GH/s';
+    if (n >= 1e6) return (n/1e6).toFixed(2) + ' MH/s';
+    if (n >= 1e3) return (n/1e3).toFixed(2) + ' kH/s';
+    return n.toFixed(2) + ' H/s';
+  };
+
+  if (d.block_reward !== undefined) {
+    document.getElementById('blockReward').textContent = d.block_reward.toFixed(4) + ' RUC';
+  }
+  if (d.halving_blocks_left !== undefined) {
+    const blocks = d.halving_blocks_left;
+    const hours = (blocks * 9 / 60).toFixed(1); // ~9 сек на блок
+    document.getElementById('halvingCountdown').textContent = fmt(blocks) + ' блоков (~' + hours + ' ч)';
+  }
+  if (d.network_hashrate !== undefined) {
+    document.getElementById('networkHashrate').textContent = fmtCompact(d.network_hashrate);
+  }
+  if (d.difficulty !== undefined) {
+    document.getElementById('difficulty').textContent = d.difficulty + ' leading zeros';
+  }
+  if (d.chain_height !== undefined) {
+    document.getElementById('chainHeight').textContent = fmt(d.chain_height);
+  }
+  if (d.total_mined !== undefined) {
+    document.getElementById('totalMined').textContent = fmt(d.total_mined.toFixed(2)) + ' RUC';
+  }
+  if (d.pool_hashrate !== undefined) {
+    document.getElementById('poolHashrate').textContent = fmtCompact(d.pool_hashrate);
+  }
+  if (d.pool_miners !== undefined) {
+    document.getElementById('poolMiners').textContent = d.pool_miners;
+  }
+  if (d.pool_last_block !== undefined) {
+    document.getElementById('poolLastBlock').textContent = '#' + d.pool_last_block;
+  }
+  if (d.pool_paid !== undefined) {
+    document.getElementById('poolPaid').textContent = d.pool_paid.toFixed(2) + ' RUC';
+  }
+}
+
+// Poll every 30s
+fetchStats();
+setInterval(fetchStats, 30000);
+</script>
 
 <script>
 // ── Cursor Follower ──
@@ -166,7 +286,7 @@
   }
   animateRing();
 
-  document.querySelectorAll('a, button, .hardware-card, .step, .terminal-block').forEach(el => {
+  document.querySelectorAll('a, button, .stat-card, .pool-stat, .terminal-block').forEach(el => {
     el.addEventListener('mouseenter', () => ring.classList.add('hover'));
     el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
   });
