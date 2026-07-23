@@ -37,37 +37,23 @@
       <div class="reveal">
         <span class="eyebrow">Wallet</span>
         <h1 class="section-title" style="margin-bottom: 12px;">Ваш RuCoin кошелёк</h1>
-        <p class="subtitle">Полноценный кошелёк в браузере. Ключи хранятся локально и не покидают ваше устройство.</p>
+        <p class="subtitle">Кошелёк привязан к вашему USB-токену JaCarta. Адрес вычисляется из серийного номера — без паролей и сид-фраз.</p>
       </div>
     </div>
   </section>
 
-  <!-- ═══════ Auth State (no wallet) ═══════ -->
+  <!-- ═══════ Auth State (no token connected) ═══════ -->
   <section id="authView" class="section-full" style="padding-top: 40px;">
     <div class="section-inner">
-      <div class="wallet-layout">
-        <!-- Create -->
-        <div id="createSection" class="wallet-auth fade-up delay-1">
-          <h3>Создать кошелёк</h3>
-          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 20px;">Генерирует новую пару ключей прямо в браузере. RSA-2048, экспорт закрытого ключа — только через seed-фразу.</p>
-          <button class="btn" onclick="handleCreate()" id="createBtn">Создать кошелёк</button>
-          <div id="createStatus" class="status"></div>
+      <div class="wallet-layout" style="justify-content: center;">
+        <div class="wallet-auth fade-up delay-1" style="text-align: center; max-width: 480px;">
+          <h3>Подключите USB-токен</h3>
+          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 20px;">
+            Адрес кошелька привязан к серийному номеру токена. Никаких seed-фраз, паролей и генерации ключей — просто подключите JaCarta через WebUSB.
+          </p>
+          <button class="btn" onclick="handleConnect()" id="connectBtn">Подключить токен</button>
+          <div id="connectStatus" class="status"></div>
         </div>
-
-        <!-- Import -->
-        <div id="importSection" class="wallet-auth fade-up delay-2">
-          <h3>Импортировать кошелёк</h3>
-          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 20px;">Введите seed-фразу из 12 слов, чтобы восстановить свой кошелёк.</p>
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <textarea id="importPhrase" placeholder="введите seed-фразу из 12 слов…" rows="2"></textarea>
-            <button class="btn outline" onclick="handleImport()" id="importBtn">Восстановить</button>
-          </div>
-          <div id="importStatus" class="status"></div>
-        </div>
-      </div>
-
-      <div style="max-width: 720px; margin: 32px auto 0; background: rgba(235, 200, 108, 0.04); border: 1px solid rgba(235, 200, 108, 0.12); border-radius: 12px; padding: 20px 24px; text-align: center; font-size: 0.78em; color: var(--text-secondary); line-height: 1.6;">
-        Ключи хранятся в <code style="font-size: 0.95em;">localStorage</code> этого браузера. Очистка кэша или сброс браузера удалит кошелёк без возможности восстановления. <strong style="color: var(--text);">Сохраните seed-фразу!</strong>
       </div>
     </div>
   </section>
@@ -88,14 +74,12 @@
           <div class="wallet-addr" id="addressDisplay"></div>
           <button class="copy-btn" onclick="copyAddress()" style="margin-top: 6px;">[ копировать ]</button>
 
-          <h3 style="margin-top: 28px;">Seed-фраза</h3>
-          <div class="mnemonic-area" id="mnemonicDisplay"></div>
-          <button class="copy-btn" onclick="copyMnemonic()">[ копировать seed-фразу ]</button>
-          <p style="font-size: 0.7em; color: #EB5C5C; margin-top: 8px; opacity: 0.8;">Никому не сообщайте seed-фразу. Она даёт полный доступ к вашим монетам.</p>
+          <h3 style="margin-top: 28px;">Серийный номер токена</h3>
+          <div class="wallet-addr" id="serialDisplay" style="font-size: 0.82em; opacity: 0.7;"></div>
 
           <div class="logout-bar">
-            <span style="font-size: 0.78em; color: var(--text-secondary);">Кошелёк загружен</span>
-            <button class="btn outline" onclick="handleLogout()" style="font-size: 0.78em; padding: 6px 14px;">Сбросить кошелёк</button>
+            <span style="font-size: 0.78em; color: var(--text-secondary);">Токен подключён</span>
+            <button class="btn outline" onclick="handleDisconnect()" style="font-size: 0.78em; padding: 6px 14px;">Отключить токен</button>
           </div>
         </div>
 
@@ -145,7 +129,7 @@
 </main>
 
 <footer>
-  <div style="margin-bottom: 8px;">© 2026 RuCoin · Ключи хранятся локально</div>
+  <div style="margin-bottom: 8px;">© 2026 RuCoin · Кошелёк привязан к USB-токену</div>
   <div class="watermark-small">◎ R</div>
 </footer>
 
@@ -156,8 +140,7 @@
 /* ──── Init ──── */
 window.addEventListener('DOMContentLoaded', () => {
   renderView();
-  refreshTimer = setInterval(renderView, 3000); // refresh balance every 3s
-  // Trigger reveal animations on wallet sections
+  refreshTimer = setInterval(renderView, 3000);
   document.querySelectorAll('.fade-up').forEach(el => {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
@@ -175,76 +158,47 @@ let currentTab = 'send';
 
 /* ──── View switching ──── */
 function renderView() {
-  const wallet = RuCoin.loadWallet();
+  const token = RuCoin.loadToken();
   const auth = document.getElementById('authView');
   const dash = document.getElementById('dashView');
-  if (!wallet) {
+  if (!token) {
     auth.style.display = 'block';
     dash.style.display = 'none';
     return;
   }
   auth.style.display = 'none';
   dash.style.display = 'block';
-  document.getElementById('addressDisplay').textContent = wallet.address;
-  document.getElementById('receiveAddress').textContent = wallet.address;
-  document.getElementById('mnemonicDisplay').textContent = wallet.mnemonic;
+  document.getElementById('addressDisplay').textContent = token.address;
+  document.getElementById('receiveAddress').textContent = token.address;
+  document.getElementById('serialDisplay').textContent = token.serial;
   const balance = RuCoin.getBalance();
   document.getElementById('balanceDisplay').textContent = balance.toFixed(4);
   renderHistory();
-  // Trigger reveal animation on dashboard elements (they start hidden)
   requestAnimationFrame(() => {
     document.querySelectorAll('#dashView .fade-up').forEach(el => el.classList.add('revealed'));
   });
 }
 
-/* ──── Create wallet ──── */
-async function handleCreate() {
-  const btn = document.getElementById('createBtn');
-  const status = document.getElementById('createStatus');
+/* ──── Connect token ──── */
+async function handleConnect() {
+  const btn = document.getElementById('connectBtn');
+  const status = document.getElementById('connectStatus');
   btn.disabled = true;
-  btn.textContent = 'Генерирую ключи…';
+  btn.textContent = 'Подключаю токен…';
   status.className = 'status info show';
-  status.textContent = 'Генерация RSA-2048 пары ключей… Это может занять несколько секунд.';
+  status.textContent = 'Запрос доступа к USB-токену…';
   try {
-    const wallet = await RuCoin.generateWallet();
-    RuCoin.saveWallet(wallet);
+    const token = await RuCoin.connectToken();
+    RuCoin.saveToken(token);
     status.className = 'status success show';
-    status.textContent = 'Кошелёк создан! Сохраните seed-фразу.';
+    status.textContent = 'Токен подключён! Адрес: ' + token.address.slice(0, 16) + '…';
     renderView();
   } catch (e) {
     status.className = 'status error show';
     status.textContent = 'Ошибка: ' + e.message;
   }
   btn.disabled = false;
-  btn.textContent = 'Создать кошелёк';
-}
-
-/* ──── Import wallet ──── */
-async function handleImport() {
-  const btn = document.getElementById('importBtn');
-  const status = document.getElementById('importStatus');
-  const phrase = document.getElementById('importPhrase').value.trim();
-  if (!phrase) {
-    status.className = 'status error show';
-    status.textContent = 'Введите seed-фразу.';
-    return;
-  }
-  btn.disabled = true;
-  btn.textContent = 'Восстанавливаю…';
-  status.className = 'status info show';
-  status.textContent = 'Восстановление кошелька из seed-фразы…';
-  try {
-    const wallet = await RuCoin.recoverWallet(phrase);
-    RuCoin.saveWallet(wallet);
-    status.className = 'status success show';
-    status.textContent = 'Кошелёк восстановлен!';
-    renderView();
-  } catch (e) {
-    status.className = 'status error show';
-    status.textContent = 'Ошибка: ' + e.message;
-  }
-  btn.disabled = false;
-  btn.textContent = 'Восстановить';
+  btn.textContent = 'Подключить токен';
 }
 
 /* ──── Send ──── */
@@ -259,7 +213,7 @@ function handleSend() {
     return;
   }
   status.className = 'status success show';
-    status.textContent = `Отправлено ${result.tx.amount.toFixed(4)} RUC`;
+  status.textContent = `Отправлено ${result.tx.amount.toFixed(4)} RUC`;
   document.getElementById('sendTo').value = '';
   document.getElementById('sendAmount').value = '';
   renderView();
@@ -267,28 +221,18 @@ function handleSend() {
 
 /* ──── Copy ──── */
 function copyAddress() {
-  const wallet = RuCoin.loadWallet();
-  if (!wallet) return;
-  navigator.clipboard.writeText(wallet.address).then(() => {
+  const token = RuCoin.loadToken();
+  if (!token) return;
+  navigator.clipboard.writeText(token.address).then(() => {
     const btn = document.querySelector('.copy-btn');
     if (btn) { btn.textContent = '[ скопировано ]'; setTimeout(() => btn.textContent = '[ копировать ]', 2000); }
   });
 }
 
-function copyMnemonic() {
-  const wallet = RuCoin.loadWallet();
-  if (!wallet) return;
-  navigator.clipboard.writeText(wallet.mnemonic).then(() => {
-    const btn = document.querySelectorAll('.copy-btn');
-    const last = btn[btn.length - 1];
-    if (last) { last.textContent = '[ скопировано ]'; setTimeout(() => last.textContent = '[ копировать seed-фразу ]', 2000); }
-  });
-}
-
-/* ──── Logout ──── */
-function handleLogout() {
-  if (!confirm('Вы уверены? Кошелёк будет удалён из этого браузера. Убедитесь, что у вас есть seed-фраза!')) return;
-  RuCoin.clearWallet();
+/* ──── Disconnect ──── */
+function handleDisconnect() {
+  if (!confirm('Отключить токен? Данные кошелька будут удалены из этого браузера. При повторном подключении адрес восстановится из серийного номера токена.')) return;
+  RuCoin.clearToken();
   renderView();
 }
 
