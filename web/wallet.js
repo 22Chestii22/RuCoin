@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════
    RuCoin Wallet — Browser-based
-   Manual address entry · localStorage
+   Secret Key Entry · localStorage
    ═══════════════════════════════════════ */
 
 /* ──── Crypto helpers ──── */
@@ -13,15 +13,15 @@ async function sha256(data) {
   return new Uint8Array(await crypto.subtle.digest('SHA-256', data));
 }
 
-/* ──── Address from serial (same as Python) ──── */
+/* ──── Derivation: Secret Key -> Address ──── */
 
-async function addressFromSerial(serial) {
-  const addrHash = await sha256(new TextEncoder().encode(serial.trim()));
+async function secretToAddress(secretKey) {
+  const addrHash = await sha256(new TextEncoder().encode(secretKey.trim()));
   return 'RUC' + toHex(addrHash).slice(0, 40).toUpperCase();
 }
 
 function isValidAddress(addr) {
-  return /^RUC[A-F0-9]{40}$/i.test(addr);
+  return /^RUC[A-F0-9]{40}$/i.test(addr.trim());
 }
 
 /* ──── Storage ──── */
@@ -70,14 +70,14 @@ function getBalance() {
 
 function sendRuc(to, amount) {
   amount = parseFloat(amount);
-  if (isNaN(amount) || amount <= 0) return { error: 'Invalid amount' };
+  if (isNaN(amount) || amount <= 0) return { error: 'Неверная сумма' };
   const balance = getBalance();
-  if (amount > balance) return { error: `Insufficient balance. Need ${amount.toFixed(4)} RUC, have ${balance.toFixed(4)}` };
-  if (!to || to.length < 10) return { error: 'Invalid recipient address' };
+  if (amount > balance) return { error: `Недостаточно средств. На балансе ${balance.toFixed(4)} RUC` };
+  if (!to || !isValidAddress(to)) return { error: 'Неверный адрес получателя' };
   const wallet = loadWallet();
-  const tx = { type: 'send', from: wallet.address, to, amount, fee: 0, time: Date.now() };
+  if (!wallet) return { error: 'Кошелёк не загружен' };
+  const tx = { type: 'send', from: wallet.address, to: to.trim().toUpperCase(), amount, fee: 0, time: Date.now() };
   const txs = addTx(tx);
-  localStorage.setItem('rucoin_txs', JSON.stringify(txs));
   return { success: true, tx };
 }
 
@@ -87,14 +87,13 @@ function addMiningReward(amount = 0.1) {
   const wallet = loadWallet();
   if (!wallet) return;
   const tx = { type: 'mining', from: 'SYSTEM', to: wallet.address, amount, fee: 0 };
-  const txs = addTx(tx);
-  localStorage.setItem('rucoin_txs', JSON.stringify(txs));
+  addTx(tx);
 }
 
 /* ──── Export ──── */
 
 window.RuCoin = {
-  addressFromSerial,
+  secretToAddress,
   isValidAddress,
   saveWallet,
   loadWallet,

@@ -76,17 +76,19 @@ def get_token_serial() -> str:
     """Получает серийный номер токена через pkcs11-tool -L."""
     out = pkcs11("-L")
     for line in out.decode().splitlines():
-        if "Serial number" in line or "serial number" in line.lower():
+        line_lower = line.lower()
+        if "serial" in line_lower and ("number" in line_lower or "num" in line_lower):
             serial = line.split(":")[-1].strip()
             if serial and serial != "00000000":
                 return serial
     raise RuntimeError("Серийный номер не найден. Токен вставлен? pcscd запущен?")
 
 
-def serial_to_address(serial: str) -> str:
-    """Адрес = SHA256(serial) → RUC + 40 hex chars."""
-    h = hashlib.sha256(serial.encode()).hexdigest()[:40].upper()
-    return f"RUC{h}"
+def derive_keys(serial: str) -> tuple[str, str]:
+    """Секретный ключ и публичный адрес от серийного номера токена."""
+    secret_key = hashlib.sha256(f"rucoin_secret_{serial}".encode()).hexdigest()
+    address_hash = hashlib.sha256(secret_key.encode()).hexdigest()[:40].upper()
+    return secret_key, f"RUC{address_hash}"
 
 
 def streebog_hash(data: bytes) -> bytes:
@@ -108,7 +110,7 @@ def get_or_create_wallet() -> tuple[bytes, str]:
     """Возвращает (private_key_pem, address). Адрес берётся из токена."""
     # Читаем токен для адреса
     serial = get_token_serial()
-    address = serial_to_address(serial)
+    _, address = derive_keys(serial)
 
     # RSA ключ только для подписи транзакций (если понадобится)
     if os.path.exists(WALLET_FILE):

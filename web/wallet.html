@@ -37,7 +37,7 @@
       <div class="reveal">
         <span class="eyebrow">Wallet</span>
         <h1 class="section-title" style="margin-bottom: 12px;">Ваш RuCoin кошелёк</h1>
-        <p class="subtitle">Введите адрес (RUC...) или серийный номер токена — баланс загрузится мгновенно. Без сид-фраз и паролей.</p>
+        <p class="subtitle">Введите Секретный ключ или Публичный адрес. Ключ генерируется скриптом <code>python3 wallet.py</code> по вашему токену.</p>
       </div>
     </div>
   </section>
@@ -45,19 +45,20 @@
   <!-- ═══════ Auth State (no wallet) ═══════ -->
   <section id="authView" class="section-full" style="padding-top: 40px;">
     <div class="section-inner">
-      <div class="wallet-auth fade-up delay-1" style="text-align: center; max-width: 520px; margin: 0 auto;">
+      <div class="wallet-auth fade-up delay-1" style="text-align: center; max-width: 540px; margin: 0 auto;">
         <h3>Войти в кошелёк</h3>
         <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 20px;">
-          Укажите адрес <code style="font-size: 0.9em;">RUC...</code> или серийный номер токена JaCarta.
+          Вставьте Секретный ключ или Публичный адрес <code style="font-size: 0.9em;">RUC...</code>
         </p>
         <div style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
-          <input type="text" id="walletInput" placeholder="RUC6A2F... или серийный номер токена" 
-                 style="padding: 14px 16px; font-family: var(--mono); font-size: 0.85em;">
+          <input type="text" id="walletInput" placeholder="Секретный ключ или адрес RUC..." 
+                 style="padding: 14px 16px; font-family: var(--mono); font-size: 0.82em;">
           <button class="btn" onclick="handleEnter()" id="enterBtn">Войти</button>
         </div>
         <div id="enterStatus" class="status"></div>
-        <p style="font-size: 0.75em; color: var(--text-secondary); margin-top: 16px;">
-          Адрес получается так: <code>SHA256(serial)[:40]</code>. Узнайте его скриптом <code>python3 wallet.py</code>.
+        <p style="font-size: 0.75em; color: var(--text-secondary); margin-top: 18px; line-height: 1.6;">
+          Узнать Секретный ключ с вашего токена JaCarta:<br>
+          <code style="color: var(--text);">python3 wallet.py</code>
         </p>
       </div>
     </div>
@@ -77,10 +78,7 @@
 
           <h3 style="margin-top: 28px;">Адрес кошелька</h3>
           <div class="wallet-addr" id="addressDisplay"></div>
-          <button class="copy-btn" onclick="copyAddress()" style="margin-top: 6px;">[ копировать ]</button>
-
-          <h3 style="margin-top: 28px;">Источник</h3>
-          <div class="wallet-addr" id="sourceDisplay" style="font-size: 0.82em; opacity: 0.7;"></div>
+          <button class="copy-btn" onclick="copyAddress()" style="margin-top: 6px;">[ копировать адрес ]</button>
 
           <div class="logout-bar">
             <span style="font-size: 0.78em; color: var(--text-secondary);">Кошелёк загружен</span>
@@ -102,7 +100,7 @@
             <div class="send-form">
               <div>
                 <label for="sendTo">Адрес получателя</label>
-                <input type="text" id="sendTo" placeholder="RUC6A2F...">
+                <input type="text" id="sendTo" placeholder="RUC...">
               </div>
               <div>
                 <label for="sendAmount">Сумма (RUC)</label>
@@ -116,7 +114,7 @@
           <!-- Receive Tab -->
           <div class="tab-content" id="panelReceive">
             <h3 style="margin-bottom: 8px;">Ваш адрес для получения</h3>
-            <p style="font-size: 0.82em; color: var(--text-secondary); margin-bottom: 12px;">Покажите этот адрес отправителю, чтобы он перевёл вам RUC.</p>
+            <p style="font-size: 0.82em; color: var(--text-secondary); margin-bottom: 12px;">Передайте этот адрес отправителю, чтобы получить RUC.</p>
             <div class="wallet-addr" id="receiveAddress" style="font-size: 0.85em; padding: 16px;"></div>
             <button class="copy-btn" onclick="copyAddress()">[ копировать адрес ]</button>
           </div>
@@ -134,7 +132,7 @@
 </main>
 
 <footer>
-  <div style="margin-bottom: 8px;">© 2026 RuCoin · Кошелёк по адресу / серийнику</div>
+  <div style="margin-bottom: 8px;">© 2026 RuCoin · Авторизация по Секретному ключу</div>
   <div class="watermark-small">◎ R</div>
 </footer>
 
@@ -175,7 +173,6 @@ function renderView() {
   dash.style.display = 'block';
   document.getElementById('addressDisplay').textContent = wallet.address;
   document.getElementById('receiveAddress').textContent = wallet.address;
-  document.getElementById('sourceDisplay').textContent = wallet.source || wallet.address;
   const balance = RuCoin.getBalance();
   document.getElementById('balanceDisplay').textContent = balance.toFixed(4);
   renderHistory();
@@ -192,32 +189,30 @@ async function handleEnter() {
   
   if (!input) {
     status.className = 'status error show';
-    status.textContent = 'Введите адрес или серийный номер';
+    status.textContent = 'Введите Секретный ключ или Адрес';
     return;
   }
 
   btn.disabled = true;
   btn.textContent = 'Загружаю…';
   status.className = 'status info show';
-  status.textContent = 'Вычисляю адрес…';
+  status.textContent = 'Проверка ключа…';
 
   try {
-    let address, source;
-    if (input.startsWith('RUC') && input.length === 43) {
-      // Это уже адрес
-      if (!RuCoin.isValidAddress(input)) throw new Error('Неверный формат адреса');
+    let address;
+    if (input.toUpperCase().startsWith('RUC') && input.length === 43) {
+      if (!RuCoin.isValidAddress(input)) throw new Error('Неверный формат адреса RUC');
       address = input.toUpperCase();
-      source = 'введён адрес';
+    } else if (input.length === 64 && /^[a-fA-F0-9]{64}$/.test(input)) {
+      address = await RuCoin.secretToAddress(input);
     } else {
-      // Это серийный номер — считаем адрес
-      address = await RuCoin.addressFromSerial(input);
-      source = `серийный: ${input}`;
+      throw new Error('Введён неверный Секретный ключ (64 символа) или Адрес (RUC...)');
     }
 
-    const walletData = { address, source, enteredAt: Date.now() };
+    const walletData = { address, enteredAt: Date.now() };
     RuCoin.saveWallet(walletData);
     status.className = 'status success show';
-    status.textContent = 'Готово! Адрес: ' + address.slice(0, 16) + '…';
+    status.textContent = 'Успешно! Адрес: ' + address.slice(0, 16) + '…';
     renderView();
   } catch (e) {
     status.className = 'status error show';
@@ -251,13 +246,13 @@ function copyAddress() {
   if (!wallet) return;
   navigator.clipboard.writeText(wallet.address).then(() => {
     const btn = document.querySelector('.copy-btn');
-    if (btn) { btn.textContent = '[ скопировано ]'; setTimeout(() => btn.textContent = '[ копировать ]', 2000); }
+    if (btn) { btn.textContent = '[ скопировано ]'; setTimeout(() => btn.textContent = '[ копировать адрес ]', 2000); }
   });
 }
 
 /* ──── Logout ──── */
 function handleLogout() {
-  if (!confirm('Выйти? Кошелёк удалится из этого браузера.')) return;
+  if (!confirm('Выйти из кошелька?')) return;
   RuCoin.clearWallet();
   renderView();
 }
