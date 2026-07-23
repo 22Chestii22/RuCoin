@@ -2,18 +2,28 @@
 """
 RuCoin — Proof-of-Streebog Miner
 ─────────────────────────────────
-Вставил токен → запустил python3 rucoin.py → майнится на твой кошелёк.
+Вставил токен → python3 rucoin.py → майнишь на свой кошелёк.
+
+Эмиссия: 256 000 000 RUC
+Награда: 2048 RUC/блок, халвинг каждые 62 500 блоков
+Стрибог-256 на аппаратном токене JaCarta (без пароля!)
 """
 
-import subprocess
-import json
-import time
-import struct
-import sys
-import os
+import subprocess, json, time, struct, sys, os, codecs
 from datetime import datetime, timezone
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.backends import default_backend
 
-# ═══ OS-зависимые пути к PKCS#11 библиотеке JaCarta ═══
+# ═══ Параметры эмиссии ═══
+
+INITIAL_REWARD = 2048        # RUC (2¹¹)
+HALVING_INTERVAL = 62500
+TOTAL_SUPPLY = 256_000_000
+SATOSHI = 0.00000001
+
+DIFFICULTY = 3
+WALLET_FILE = "rucoin_wallet.pem"
 
 PKCS11_PATHS = {
     "linux":  "/usr/lib/libjcPKCS11-2.so",
@@ -29,21 +39,17 @@ def detect_module() -> str:
         path = PKCS11_PATHS[plat]
         if os.path.exists(path):
             return path
-        # fallback: common paths
-        for p in set(PKCS11_PATHS.values()):
-            if os.path.exists(p):
-                return p
-    # Linux fallback: search common locations
+    for p in set(PKCS11_PATHS.values()):
+        if os.path.exists(p):
+            return p
     for p in ["/usr/lib/libjcPKCS11-2.so", "/usr/lib64/libjcPKCS11-2.so",
               "/usr/lib/x86_64-linux-gnu/libjcPKCS11-2.so"]:
         if os.path.exists(p):
             return p
-    # Windows fallback
     if plat in ("win32", "cygwin"):
         for p in ["jcPKCS11-2.dll", "C:/Windows/System32/jcPKCS11-2.dll"]:
             if os.path.exists(p):
                 return p
-    # macOS fallback
     if plat == "darwin":
         for p in ["/Library/Frameworks/jcPKCS11-2.framework/jcPKCS11-2",
                   "/usr/local/lib/libjcPKCS11-2.dylib"]:
@@ -54,7 +60,6 @@ def detect_module() -> str:
 
 
 def pkcs11(*args, timeout=30) -> bytes:
-    """Вызов pkcs11-tool с таймаутом."""
     mod = detect_module()
     cmd = ["pkcs11-tool", "--module", mod] + list(args)
     r = subprocess.run(cmd, capture_output=True, timeout=timeout)
@@ -65,44 +70,38 @@ def pkcs11(*args, timeout=30) -> bytes:
     return r.stdout
 
 
-def get_public_key() -> tuple[bytes, str]:
-    """Читает публичный RSA-ключ с eToken слота (уже есть на токене)."""
-    print("🔍 Читаю ключ с токена...")
-    out = pkcs11("--slot", "0x2ffff", "--list-objects")
-    text = out.decode()
-    if "psb" not in text and "modulus" not in text.lower():
-        raise RuntimeError("Не найден ключ на токене. Проверь что JaCarta вставлена.")
-    cert_raw = pkcs11("--slot", "0x2ffff", "--read-object", "--type", "cert", "--id", "3e30fe2c")
-    if not cert_raw or len(cert_raw) < 50:
-        raise RuntimeError("Не удалось прочитать сертификат с токена.")
-    return cert_raw, "4E43000523335331"
-
-
 def streebog_hash(data: bytes) -> bytes:
-    """Хэширует данные Стрибог-256 через аппаратный токен (слот ГОСТ)."""
     tmp = "/tmp/_rucoin_block.bin"
     with open(tmp, "wb") as f:
         f.write(data)
     pkcs11_result = pkcs11("--slot", "0x1ffff", "--hash",
                            "--mechanism", "GOSTR3411-12-256",
                            "--input-file", tmp, timeout=120)
-    # pkcs11-tool выводит строку "Using digest algorithm GOSTR3411-12-256"
-    # затем перевод строки, затем 32 сырых байта хэша
     raw = pkcs11_result
-    # Отрезаем всё до последнего перевода строки — после него идут сырые байты
     if b"\n" in raw:
         raw = raw.rsplit(b"\n", 1)[-1]
     if len(raw) >= 32:
         return raw[:32]
-    # если не получилось — возвращаем что есть
     return raw.ljust(32, b"\x00")[:32]
 
 
-def derive_address(pubkey_bytes: bytes) -> str:
-    """Адрес кошелька = RUC + хэш Стрибог от публичного ключа, первые 20 байт."""
-    h = streebog_hash(pubkey_bytes)
-    # Первые 20 байт как адрес
-    return "RUC" + h[:20].hex().upper()
+def get_or_create_wallet() -> tuple[bytes, str]:
+    if os.path.exists(WALLET_FILE):
+        with open(WALLET_FILE, "rb") as f:
+            key = serialization.load_pem_private_key(f.read(), password=None, backend=default_backend())
+    else:
+        key = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
+        with open(WALLET_FILE, "wb") as f:
+            f.write(key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=serialization.NoEncryption()))
+    pub = key.public_key().public_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo)
+    h = streebog_hash(pub)
+    address = "RUC" + h[:20].hex().upper()
+    return pub, address
 
 
 # ═══ Блокчейн ═══
@@ -157,8 +156,37 @@ class Block:
 
 
 CHAIN_FILE = "rucoin_chain.json"
-DIFFICULTY = 3
-REWARD = 50  # монет за блок
+
+
+def reward_for_block(index: int) -> float:
+    """Считает награду за блок с учётом халвинга.
+
+    Награда уменьшается вдвое каждые HALVING_INTERVAL блоков.
+    2048 → 1024 → 512 → ... → 0.5 → 0.25 → ... → 0.00000001
+
+    Останавливается, когда награда становится меньше 1 сатоши.
+    """
+    epoch = index // HALVING_INTERVAL
+    reward = INITIAL_REWARD >> epoch
+    min_reward = SATOSHI
+    if reward < min_reward:
+        # дробная часть — используем float для sub-1 RUC
+        reward = INITIAL_REWARD / (2 ** epoch)
+        if reward < min_reward:
+            return 0.0
+    return float(reward)
+
+
+def halving_epoch(index: int) -> int:
+    return index // HALVING_INTERVAL
+
+
+def total_mined(chain_len: int) -> int:
+    """Сколько всего RUC добыто с учётом всех халвингов."""
+    total = 0
+    for i in range(chain_len):
+        total += reward_for_block(i)
+    return total
 
 
 def load_chain() -> list:
@@ -173,13 +201,25 @@ def save_chain(chain: list):
         json.dump(chain, f, indent=2)
 
 
+def show_halving_info(index: int):
+    epoch = halving_epoch(index)
+    reward = reward_for_block(index)
+    next_halving = HALVING_INTERVAL - (index % HALVING_INTERVAL)
+    print(f"   ── Эпоха #{epoch} · награда {reward} RUC"
+          f" · следующий халвинг через {next_halving} блоков")
+    total_mined_supply = total_mined(index)
+    pct = (total_mined_supply / TOTAL_SUPPLY) * 100
+    print(f"   ── Добыто: {total_mined_supply:.0f} / {TOTAL_SUPPLY} RUC ({pct:.2f}%)")
+
+
 def main():
     print("═══════════════════════════════════════")
     print("  RuCoin — Proof-of-Streebog Miner")
     print(f"  Platform: {sys.platform}")
+    print(f"  Эмиссия: {TOTAL_SUPPLY} RUC")
+    print(f"  Старт: {INITIAL_REWARD} RUC/блок, халвинг каждые {HALVING_INTERVAL} блоков")
     print("═══════════════════════════════════════\n")
 
-    # 1. Подкючение к токену
     try:
         mod = detect_module()
         print(f"✅ PKCS#11: {mod}")
@@ -188,18 +228,22 @@ def main():
               "   Установи: https://www.aladdin-rd.ru/support/downloads/jacarta/")
         sys.exit(1)
 
-    # 2. Чтение ключа / адреса
-    try:
-        pubkey, serial = get_public_key()
-        address = derive_address(pubkey)
-        print(f"🔑 Токен: {serial}")
-        print(f"💳 Адрес: {address}")
-    except Exception as e:
-        print(f"❌ Не удалось прочитать ключ: {e}")
-        print("   Проверь что JaCarta вставлена и pcscd запущен.")
-        sys.exit(1)
+    print("🚀 Проверяю Стрибог...")
+    streebog_hash(b"rucoin_test")
+    print("✅ Стрибог-256 работает (без пароля!)\n")
 
-    # 3. Загрузка/создание цепи
+    raw_name = input("Имя воркера (Enter = Satoshi): ").strip() or "Satoshi"
+    try:
+        worker_name = codecs.decode(raw_name, 'unicode_escape')
+    except Exception:
+        worker_name = raw_name
+    print(worker_name)
+
+    print()
+    pubkey, address = get_or_create_wallet()
+    print(f"💳 Адрес: {address}")
+    print(f"🔑 Ключ: {WALLET_FILE}\n")
+
     chain = load_chain()
     if chain:
         print(f"📦 Цепь: {len(chain)} блоков")
@@ -207,8 +251,9 @@ def main():
         prev_hash = chain[-1]["hash"]
     else:
         print("📦 Цепь: новая")
-        genesis = Block(0, [{"coinbase": address, "amount": REWARD}], "0" * 64)
-        print("   Майню genesis block...")
+        genesis_reward = reward_for_block(0)
+        genesis = Block(0, [{"coinbase": address, "amount": genesis_reward}], "0" * 64)
+        print(f"   Майню genesis block (награда: {genesis_reward} RUC)...")
         t, r = genesis.mine(DIFFICULTY)
         genesis.hash = genesis.compute_hash()
         chain.append(genesis.to_dict())
@@ -217,7 +262,7 @@ def main():
         start_index = 1
         prev_hash = genesis.hash
 
-    # 4. Майнинг
+    show_halving_info(start_index)
     print(f"\n⛏️  Майнинг... сложность: {DIFFICULTY} нуля")
     block_num = start_index
     total_hashes = 0
@@ -225,7 +270,8 @@ def main():
 
     try:
         while True:
-            txn = [{"coinbase": address, "amount": REWARD}]
+            txn_reward = reward_for_block(block_num)
+            txn = [{"coinbase": address, "amount": txn_reward}]
             b = Block(block_num, txn, prev_hash)
             start_t = time.time()
             elapsed, rate = b.mine(DIFFICULTY)
@@ -237,16 +283,23 @@ def main():
 
             print(f"  [{ts}] Блок #{b.index} намайнен! "
                   f"{elapsed:.1f}s (среднее: ~{avg:.2f} H/s)  "
-                  f"nonce: {b.nonce}  хэш: {b.hash[:16]}...")
+                  f"nonce: {b.nonce}  хэш: {b.hash[:16]}...  "
+                  f"+{txn_reward} RUC")
 
             chain.append(b.to_dict())
             save_chain(chain)
             prev_hash = b.hash
             block_num += 1
 
+            if block_num % HALVING_INTERVAL == 0:
+                epoch = halving_epoch(block_num)
+                print(f"\n═══ ХАЛВИНГ! Эпоха #{epoch} — награда теперь {reward_for_block(block_num)} RUC ═══\n")
+
     except KeyboardInterrupt:
+        mined = total_mined(len(chain))
         print(f"\n\n⏹  Остановлен. Всего блоков: {len(chain)}")
-        print(f"   Баланс: {len(chain) * REWARD} RUC на адресе {address}")
+        print(f"   Добыто: {mined:.2f} RUC / {TOTAL_SUPPLY} RUC ({mined/TOTAL_SUPPLY*100:.4f}%)")
+        print(f"   Адрес: {address}")
         print(f"   Цепь сохранена в {CHAIN_FILE}")
 
 
