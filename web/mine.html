@@ -25,6 +25,7 @@
     </a>
     <a href="/wallet" class="nav-link">Кошелёк</a>
     <a href="/mine" class="nav-link active">Майнинг</a>
+    <a href="/pool" class="nav-link">Пул</a>
     <a href="https://github.com/22Chestii22/RuCoin" class="nav-link" target="_blank">GitHub</a>
   </nav>
 </header>
@@ -40,135 +41,201 @@
     </div>
   </section>
 
-  <!-- ═══ NETWORK STATS ═══ -->
-  <section class="section-full" style="padding-top: 0;">
-    <div class="section-inner">
-      <div class="stats-grid reveal delay-1">
-        <div class="stat-card">
-          <div class="stat-label">Текущая награда за блок</div>
-          <div class="stat-value" id="blockReward">— RUC</div>
+  <!-- ═══ TAB BAR ═══ -->
+  <div class="tab-bar reveal">
+    <button class="tab active" data-tab="solo">Соло-майнинг</button>
+    <button class="tab" data-tab="pool">Пул-майнинг</button>
+    <button class="tab" data-tab="network">Статистика сети</button>
+  </div>
+
+  <!-- ═══ SOLO TAB ═══ -->
+  <section id="tab-solo" class="tab-panel active">
+    <div class="section-full">
+      <div class="section-inner">
+        <div class="reveal">
+          <h2 class="section-title" style="margin-bottom: 8px;">Запуск соло-майнинга</h2>
+          <p class="section-sub">Каждый найденный блок полностью ваш. Награда: <strong id="soloReward">— RUC</strong> за блок.</p>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Следующий халвинг через</div>
-          <div class="stat-value" id="halvingCountdown">—</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Network Hashrate (оценка)</div>
-          <div class="stat-value" id="networkHashrate">— H/s</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Сложность (leading zeros)</div>
-          <div class="stat-value" id="difficulty">—</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Высота цепочки</div>
-          <div class="stat-value" id="chainHeight">—</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Всего заминировано</div>
-          <div class="stat-value" id="totalMined">— RUC</div>
+
+        <div class="terminal-block reveal delay-1" style="margin-top: 24px;">
+<span class="prompt">$</span> git clone https://github.com/22Chestii22/RuCoin.git
+<span class="prompt">$</span> cd RuCoin
+<span class="prompt">$</span> python3 rucoin.py --solo --worker ВАШ_НИК
+</div>
+
+        <div class="reveal delay-2" style="margin-top: 20px;">
+          <h3 style="margin-bottom: 12px;">Требования</h3>
+          <ul style="line-height: 2; color: var(--text-secondary); font-size: 0.9em;">
+            <li>USB-токен JaCarta (ГОСТ/JaCarta-2 ГОСТ) с поддержкой Стрибог</li>
+            <li>Linux / macOS / Windows с установленным OpenSC и pcscd</li>
+            <li>Драйвер JaCarta (libjcPKCS11-2.so) — <a href="https://aladdin-rd.ru" target="_blank">aladdin-rd.ru</a></li>
+            <li>Python 3.8+ и зависимости: <code>pip install -r requirements.txt</code></li>
+          </ul>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ═══ POOL INFO ═══ -->
-  <section class="section-full">
-    <div class="section-inner">
-      <span class="eyebrow reveal">Пул-майнинг</span>
-      <h2 class="section-title reveal delay-1">RuCoin Pool</h2>
-      <p class="section-sub reveal delay-2">Подключитесь к пулу для стабильных выплат. Минимальный порог выплаты — 1 RUC.</p>
-
-      <div class="pool-stats reveal delay-2">
-        <div class="pool-stat">
-          <span class="pool-label">Pool Hashrate</span>
-          <span class="pool-value" id="poolHashrate">— H/s</span>
+    <section class="section-full">
+      <div class="section-inner">
+        <div class="reveal delay-2">
+          <h2 class="section-title" style="margin-bottom: 8px;">Установка зависимостей</h2>
         </div>
-        <div class="pool-stat">
-          <span class="pool-label">Активных майнеров</span>
-          <span class="pool-value" id="poolMiners">—</span>
-        </div>
-        <div class="pool-stat">
-          <span class="pool-label">Последний найденный блок</span>
-          <span class="pool-value" id="poolLastBlock">—</span>
-        </div>
-        <div class="pool-stat">
-          <span class="pool-label">Выплачено всего</span>
-          <span class="pool-value" id="poolPaid">— RUC</span>
-        </div>
-      </div>
 
-      <div class="reveal delay-3" style="margin-top: 32px;">
-        <h3 style="margin-bottom: 12px;">Подключение</h3>
-        <div class="terminal-block"><span class="prompt">$</span> python3 rucoin.py --pool --worker ВАШ_НИК
-<span class="output"># Или для соло-майнинга (по умолчанию):</span>
-<span class="prompt">$</span> python3 rucoin.py --solo --worker ВАШ_НИК</div>
-      </div>
-
-      <div class="reveal delay-4" style="margin-top: 24px;">
-        <p style="font-size: 0.85em; color: var(--text-secondary);">
-          Пул использует упрощённый Stratum-подобный протокол по HTTP/JSON.
-          Адрес пула: <code id="poolUrl">https://rucoin.vercel.app/api/pool</code>
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ SETUP ═══ -->
-  <section class="section-full">
-    <div class="section-inner">
-      <span class="eyebrow reveal">Установка</span>
-      <h2 class="section-title reveal delay-1">Настройка окружения</h2>
-
-      <div class="reveal delay-2" style="margin-top: 40px;">
-        <p style="margin-bottom: 12px;"><strong>Linux (Arch / Debian / Ubuntu)</strong></p>
-        <div class="terminal-block"><span class="prompt">$</span> sudo pacman -S opensc ccid pcsc-tools libp11  <span class="output"># Arch</span>
+        <div class="reveal delay-3" style="margin-top: 20px;">
+          <p style="margin-bottom: 12px;"><strong>Linux (Arch / Debian / Ubuntu)</strong></p>
+          <div class="terminal-block"><span class="prompt">$</span> sudo pacman -S opensc ccid pcsc-tools libp11  <span class="output"># Arch</span>
 <span class="prompt">$</span> <span class="output"># или</span>
-<span class="prompt">$</span> sudo apt install opensc pcscd libp11-dev  <span class="output"># Debian</span>
+<span class="prompt">$</span> sudo apt install opensc pcscd libp11-dev  <span class="output"># Debian/Ubuntu</span>
 
 <span class="output"># Драйвер JaCarta (libjcPKCS11-2.so) — скачайте с aladdin-rd.ru</span>
 <span class="prompt">$</span> echo "module: /usr/lib/libjcPKCS11-2.so" | \
   sudo tee /usr/share/p11-kit/modules/jacarta.module</div>
-      </div>
+        </div>
 
-      <div class="reveal delay-3" style="margin-top: 36px;">
-        <p style="margin-bottom: 12px;"><strong>macOS</strong></p>
-        <div class="terminal-block"><span class="prompt">$</span> brew install opensc
+        <div class="reveal delay-4" style="margin-top: 24px;">
+          <p style="margin-bottom: 12px;"><strong>macOS</strong></p>
+          <div class="terminal-block"><span class="prompt">$</span> brew install opensc
 <span class="prompt">$</span> <span class="output"># Драйвер JaCarta для macOS — сайт Aladdin</span></div>
-      </div>
+        </div>
 
-      <div class="reveal delay-4" style="margin-top: 36px;">
-        <p style="margin-bottom: 12px;"><strong>Windows</strong></p>
-        <div class="terminal-block"><span class="output"># Установите OpenSC и драйвер JaCarta</span>
+        <div class="reveal delay-5" style="margin-top: 24px;">
+          <p style="margin-bottom: 12px;"><strong>Windows</strong></p>
+          <div class="terminal-block"><span class="output"># Установите OpenSC и драйвер JaCarta</span>
 <span class="output"># PKCS#11 библиотека обычно в C:\Windows\System32\jcPKCS11.dll</span></div>
+        </div>
       </div>
-    </div>
+    </section>
   </section>
 
-  <!-- ═══ LAUNCH ═══ -->
-  <section class="section-full">
-    <div class="section-inner">
-      <span class="eyebrow reveal">Запуск</span>
-      <h2 class="section-title reveal delay-1">Майнинг в одну команду</h2>
+  <!-- ═══ POOL TAB ═══ -->
+  <section id="tab-pool" class="tab-panel">
+    <div class="section-full">
+      <div class="section-inner">
+        <div class="reveal">
+          <h2 class="section-title" style="margin-bottom: 8px;">RuCoin Pool</h2>
+          <p class="section-sub">Подключитесь к пулу для стабильных выплат. Минимальный порог выплаты — 1 RUC.</p>
+        </div>
 
-      <div class="reveal delay-2" style="margin-top: 40px;">
-        <p style="margin-bottom: 16px;">Клонируйте репозиторий и выберите режим:</p>
-        <div class="terminal-block"><span class="prompt">$</span> git clone https://github.com/22Chestii22/RuCoin.git
-<span class="prompt">$</span> cd RuCoin
-<span class="prompt">$</span> python3 rucoin.py --pool --worker my_rig    <span class="output"># Пул-майнинг</span>
-<span class="prompt">$</span> python3 rucoin.py --solo --worker my_rig    <span class="output"># Соло-майнинг</span></div>
-      </div>
+        <div class="pool-connection reveal delay-1" style="margin-top: 24px;">
+          <h3 style="margin-bottom: 12px;">Подключение</h3>
+          <div class="terminal-block"><span class="prompt">$</span> python3 rucoin.py --pool --worker ВАШ_НИК
+<span class="output"># Или укажите свой пул:</span>
+<span class="prompt">$</span> python3 rucoin.py --pool --url https://rucoin.vercel.app/api/pool --worker ВАШ_НИК</div>
+        </div>
 
-      <div class="reveal delay-3" style="margin-top: 24px;">
-        <p>Флаги:</p>
-        <ul style="margin-top: 8px; line-height: 2; color: var(--text-secondary);">
-          <li><code>--pool</code> — пул-майнинг (подключается к <code>api/pool</code>)</li>
-          <li><code>--solo</code> — соло-майнинг (локальная цепочка, полная награда)</li>
-          <li><code>--worker NAME</code> — имя воркера (для статистики пула)</li>
-          <li><code>--url URL</code> — кастомный эндпоинт пула (опционально)</li>
-        </ul>
+        <div class="pool-info reveal delay-2" style="margin-top: 24px;">
+          <p style="font-size: 0.9em; color: var(--text-secondary); line-height: 1.7;">
+            <strong>Протокол:</strong> HTTP/JSON (упрощённый Stratum-like)<br>
+            <strong>Эндпоинт:</strong> <code>https://rucoin.vercel.app/api/pool</code><br>
+            <strong>Мин. выплата:</strong> 1 RUC<br>
+            <strong>Комиссия пула:</strong> 0% (пока тестовый режим)
+          </p>
+        </div>
       </div>
-    </div>
+    </section>
+
+    <section class="section-full">
+      <div class="section-inner">
+        <div class="reveal delay-1">
+          <h2 class="section-title" style="margin-bottom: 8px;">Как это работает</h2>
+        </div>
+
+        <div class="steps-grid reveal delay-2" style="margin-top: 24px;">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Получаете job</strong> — майнер запрашивает у пула текущую высоту, prev_hash и difficulty
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Майните</strong> — ищете nonce, дающий хеш с нужным количеством нулей (Streebog на токене)
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Отправляете шар</strong> — найденный блок отправляется на пул для проверки
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>Получаете награду</strong> — пул проверяет, добавляет в цепь, начисывает RUC на ваш адрес
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <!-- ═══ NETWORK STATS TAB ═══ -->
+  <section id="tab-network" class="tab-panel">
+    <div class="section-full" style="padding-top: 0;">
+      <div class="section-inner">
+        <div class="stats-grid reveal delay-1">
+          <div class="stat-row">
+            <div class="stat-label">Текущая награда за блок</div>
+            <div class="stat-value" id="blockReward">— RUC</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">Следующий халвинг через</div>
+            <div class="stat-value" id="halvingCountdown">—</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">Network Hashrate (оценка)</div>
+            <div class="stat-value" id="networkHashrate">— H/s</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">Сложность (leading zeros)</div>
+            <div class="stat-value" id="difficulty">—</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">Высота цепочки</div>
+            <div class="stat-value" id="chainHeight">—</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">Всего заминировано</div>
+            <div class="stat-value" id="totalMined">— RUC</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-full">
+      <div class="section-inner">
+        <div class="reveal delay-1">
+          <h2 class="section-title" style="margin-bottom: 8px;">Эмиссия</h2>
+        </div>
+
+        <div class="emission-table reveal delay-2" style="margin-top: 20px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Эпоха</th>
+                <th>Блоков</th>
+                <th>Награда за блок</th>
+                <th>Всего RUC в эпохе</th>
+              </tr>
+            </thead>
+            <tbody id="emissionTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <!-- ═══ SETUP (collapsed in solo tab) ═══ -->
+  <section id="tab-setup" class="tab-panel" style="display: none;">
+    <div class="section-full">
+      <div class="section-inner">
+        <div class="reveal">
+          <h2 class="section-title" style="margin-bottom: 8px;">Полная инструкция по установке</h2>
+        </div>
+        <!-- Content same as solo tab but expanded -->
+      </div>
+    </section>
   </section>
 
   <!-- ═══ CTA ═══ -->
@@ -192,7 +259,21 @@
 </footer>
 
 <script>
-// ── Live Network Stats ──────────────────────────────────────
+// ═══ TAB SWITCHING ═══
+const tabs = document.querySelectorAll('.tab');
+const panels = document.querySelectorAll('.tab-panel');
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.tab;
+    tabs.forEach(t => t.classList.remove('active'));
+    panels.forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + target).classList.add('active');
+  });
+});
+
+// ═══ LIVE NETWORK STATS ═══
 async function fetchStats() {
   try {
     const res = await fetch('/api/stats');
@@ -216,10 +297,11 @@ function updateStats(d) {
 
   if (d.block_reward !== undefined) {
     document.getElementById('blockReward').textContent = d.block_reward.toFixed(4) + ' RUC';
+    document.getElementById('soloReward').textContent = d.block_reward.toFixed(4);
   }
   if (d.halving_blocks_left !== undefined) {
     const blocks = d.halving_blocks_left;
-    const hours = (blocks * 9 / 60).toFixed(1); // ~9 сек на блок
+    const hours = (blocks * 9 / 60).toFixed(1);
     document.getElementById('halvingCountdown').textContent = fmt(blocks) + ' блоков (~' + hours + ' ч)';
   }
   if (d.network_hashrate !== undefined) {
@@ -234,27 +316,46 @@ function updateStats(d) {
   if (d.total_mined !== undefined) {
     document.getElementById('totalMined').textContent = fmt(d.total_mined.toFixed(2)) + ' RUC';
   }
-  if (d.pool_hashrate !== undefined) {
-    document.getElementById('poolHashrate').textContent = fmtCompact(d.pool_hashrate);
-  }
-  if (d.pool_miners !== undefined) {
-    document.getElementById('poolMiners').textContent = d.pool_miners;
-  }
-  if (d.pool_last_block !== undefined) {
-    document.getElementById('poolLastBlock').textContent = '#' + d.pool_last_block;
-  }
-  if (d.pool_paid !== undefined) {
-    document.getElementById('poolPaid').textContent = d.pool_paid.toFixed(2) + ' RUC';
+}
+
+fetchStats();
+setInterval(fetchStats, 30000);
+
+// ═══ EMISSION TABLE ═══
+function renderEmissionTable() {
+  const INITIAL_REWARD = 2048;
+  const HALVING_INTERVAL = 62500;
+  const TOTAL_SUPPLY = 256000000;
+
+  const tbody = document.getElementById('emissionTable');
+  let totalMined = 0;
+  let reward = 2048;
+  let epoch = 0;
+
+  while (totalMined < 256000000 && epoch < 40) {
+    const epochTotal = reward * HALVING_INTERVAL;
+    if (totalMined + epochTotal > 256000000) break;
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>#${epoch}</td>
+      <td>${HALVING_INTERVAL.toLocaleString('ru-RU')}</td>
+      <td>${reward} RUC</td>
+      <td>${(epochTotal).toLocaleString('ru-RU')} RUC</td>
+    `;
+    tbody.appendChild(row);
+
+    totalMined += epochTotal;
+    reward = reward / 2;
+    epoch++;
   }
 }
 
-// Poll every 30s
-fetchStats();
-setInterval(fetchStats, 30000);
+renderEmissionTable();
 </script>
 
 <script>
-// ── Cursor Follower ──
+// ═══ CURSOR FOLLOWER ═══
 (function() {
   const dot = document.querySelector('.cursor-dot');
   const ring = document.querySelector('.cursor-ring');
@@ -286,13 +387,13 @@ setInterval(fetchStats, 30000);
   }
   animateRing();
 
-  document.querySelectorAll('a, button, .stat-card, .pool-stat, .terminal-block').forEach(el => {
+  document.querySelectorAll('a, button, .stat-row, .step, .terminal-block').forEach(el => {
     el.addEventListener('mouseenter', () => ring.classList.add('hover'));
     el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
   });
 })();
 
-// ── Scroll Reveal ──
+// ═══ SCROLL REVEAL ═══
 (function() {
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {

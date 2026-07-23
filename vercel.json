@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    { "source": "/api/stats", "destination": "/api/stats" },
+    { "source": "/api/pool/(.*)", "destination": "/api/pool" }
+  ],
+  "routes": [
+    { "src": "/api/stats", "dest": "/api/stats/index.py" },
+    { "src": "/api/pool/(.*)", "dest": "/api/pool/index.py" }
+  ]
+}
