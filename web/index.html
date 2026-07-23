@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RuCoin — криптовалюта на USB-токенах</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">RuCoin <span>/</span></a>
+      <a href="/wallet">Кошелёк</a>
+      <a href="/mine">Майнинг</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="hero fade-up">
+      <p class="eyebrow">Proof-of-Streebog</p>
+      <h1>Первая криптовалюта,<br>которую майнят <span style="color:var(--text-secondary)">USB-токенами</span></h1>
+      <p>RuCoin использует российский хэш Стрибог вместо SHA-256. Майнинг возможен только на физических токенах с аппаратной криптографией.</p>
+      <a href="/mine" class="btn">Начать майнить →</a>
+    </div>
+
+    <div class="section fade-up delay-1">
+      <h2>Что это</h2>
+      <p class="subtitle" style="margin-bottom:32px">
+        Вставил токен → запустил `python3 rucoin.py` → майнится на твой кошелёк. Адрес определяется автоматически по чипу.
+      </p>
+      <div class="grid">
+        <div class="card">
+          <h3>Аппаратный Стрибог</h3>
+          <p>Хэширование происходит внутри чипа токена через PKCS#11.</p>
+          <span class="tag">Hardware</span>
+        </div>
+        <div class="card">
+          <h3>Ключ в кремнии</h3>
+          <p>Приватный ключ внутри чипа, никогда не извлекается. Адрес читается сам.</p>
+          <span class="tag green">Non-Extractable</span>
+        </div>
+        <div class="card">
+          <h3>Пост-квант</h3>
+          <p>Стрибог (ГОСТ Р 34.11-2012) устойчив к квантовым атакам.</p>
+          <span class="tag">Post-Quantum</span>
+        </div>
+        <div class="card">
+          <h3>Plug & Mine</h3>
+          <p>Никакой настройки. Вставил, запустил, майнишь. OS: всё, что с Python.</p>
+          <span class="tag red">Cross-Platform</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section fade-up delay-3">
+      <h2>Характеристики</h2>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+        <div class="card">
+          <p class="eyebrow" style="margin-bottom:6px">Алгоритм</p>
+          <p style="color:var(--text);font-weight:500">Стрибог-256</p>
+        </div>
+        <div class="card">
+          <p class="eyebrow" style="margin-bottom:6px">Консенсус</p>
+          <p style="color:var(--text);font-weight:500">Proof-of-Streebog</p>
+        </div>
+        <div class="card">
+          <p class="eyebrow" style="margin-bottom:6px">Эмиссия</p>
+          <p style="color:var(--text);font-weight:500">21 000 000 RUC</p>
+        </div>
+        <div class="card">
+          <p class="eyebrow" style="margin-bottom:6px">Сложность</p>
+          <p style="color:var(--text);font-weight:500">3 нуля (адаптивная)</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>RuCoin — экспериментальный проект. Не является инвестиционной рекомендацией.</p>
+  </footer>
+</body>
+</html>

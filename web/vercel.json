@@ -1,0 +1,8 @@
+{
+  "outputDirectory": ".",
+  "routes": [
+    { "src": "/", "dest": "/index.html" },
+    { "src": "/wallet", "dest": "/wallet.html" },
+    { "src": "/mine", "dest": "/mine.html" }
+  ]
+}

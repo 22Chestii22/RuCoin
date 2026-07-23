@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Майнинг — RuCoin</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">RuCoin <span>/</span></a>
+      <a href="/wallet">Кошелёк</a>
+      <a href="/mine">Майнинг</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="hero" style="padding-bottom:40px">
+      <p class="eyebrow">Mining</p>
+      <h1>Майнинг RuCoin</h1>
+      <p>Вставь токен → запусти одну команду → майнится на твой кошелёк.</p>
+    </div>
+
+    <div class="section" style="padding-top:0;border:none">
+      <div class="card" style="max-width:600px;margin:0 auto;text-align:center;padding:40px">
+        <p style="font-size:0.82em;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Быстрый старт</p>
+        <pre style="font-size:0.9em;padding:16px 20px;text-align:left;margin:0">git clone https://github.com/yourname/rucoin
+cd rucoin
+python3 rucoin.py</pre>
+        <p style="color:var(--text-secondary);font-size:0.85em;margin-top:16px">Всё. Три команды. Дальше майнер сам подхватит твой токен.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Что делает майнер</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="num">01</div>
+          <div class="step-body">
+            <strong>Подхватывает твой токен</strong>
+            <p>Скрипт находит JaCarta, читает публичный ключ с чипа (тот что от Промсвязьбанка).</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="num">02</div>
+          <div class="step-body">
+            <strong>Вычисляет твой адрес</strong>
+            <p>Хэширует ключ Стрибогом — получается уникальный адрес кошелька. Никаких созданий, импортов и seed-фраз.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="num">03</div>
+          <div class="step-body">
+            <strong>Начинает майнить</strong>
+            <p>Перебирает nonce, хэширует данные через аппаратный Стрибог на токене, проверяет сложность. Нашёл блок — награда твоя.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Системные требования</h2>
+      <table>
+        <tr><th>OS</th><th>PKCS#11 библиотека</th><th>Статус</th></tr>
+        <tr><td>Linux (Arch / Ubuntu / Debian / Fedora)</td><td><code>libjcPKCS11-2.so</code></td><td><span class="tag green" style="margin:0">Работает</span></td></tr>
+        <tr><td>macOS</td><td><code>libjcPKCS11-2.dylib</code></td><td><span class="tag" style="margin:0">Ожидает теста</span></td></tr>
+        <tr><td>Windows</td><td><code>jcPKCS11-2.dll</code></td><td><span class="tag" style="margin:0">Ожидает теста</span></td></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Хэшрейт</h2>
+      <table>
+        <tr><th>Конфигурация</th><th>Хэшей/с</th></tr>
+        <tr><td>1 токен</td><td>~0.1 H/s</td></tr>
+        <tr><td>10 токенов в USB-хабе</td><td>~1 H/s</td></tr>
+        <tr><td>50 токенов</td><td>~5 H/s</td></tr>
+      </table>
+      <p style="margin-top:14px;color:var(--text-secondary);font-size:0.82em;line-height:1.6">
+        RuCoin не про скорость майнинга. Это единственная крипта, которую принципиально нельзя майнить на GPU или ASIC — только на физических токенах.
+      </p>
+    </div>
+  </main>
+
+  <footer>
+    <p>RuCoin — экспериментальный проект. Не является инвестиционной рекомендацией.</p>
+  </footer>
+</body>
+</html>
