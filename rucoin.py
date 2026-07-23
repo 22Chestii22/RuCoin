@@ -9,7 +9,7 @@ RuCoin — Proof-of-Streebog Miner
 Стрибог-256 на аппаратном токене JaCarta (без пароля!)
 """
 
-import subprocess, json, time, struct, sys, os, codecs
+import subprocess, json, time, struct, sys, os, codecs, hashlib
 from datetime import datetime, timezone
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -24,6 +24,7 @@ SATOSHI = 0.00000001
 
 DIFFICULTY = 3
 WALLET_FILE = "rucoin_wallet.pem"
+CHAIN_FILE = "rucoin_chain.json"
 
 PKCS11_PATHS = {
     "linux":  "/usr/lib/libjcPKCS11-2.so",
@@ -32,6 +33,7 @@ PKCS11_PATHS = {
     "cygwin": "jcPKCS11-2.dll",
     "darwin": "/Library/Frameworks/jcPKCS11-2.framework/jcPKCS11-2",
 }
+
 
 def detect_module() -> str:
     plat = sys.platform
@@ -70,6 +72,23 @@ def pkcs11(*args, timeout=30) -> bytes:
     return r.stdout
 
 
+def get_token_serial() -> str:
+    """Получает серийный номер токена через pkcs11-tool -L."""
+    out = pkcs11("-L")
+    for line in out.decode().splitlines():
+        if "Serial number" in line or "serial number" in line.lower():
+            serial = line.split(":")[-1].strip()
+            if serial and serial != "00000000":
+                return serial
+    raise RuntimeError("Серийный номер не найден. Токен вставлен? pcscd запущен?")
+
+
+def serial_to_address(serial: str) -> str:
+    """Адрес = SHA256(serial) → RUC + 40 hex chars."""
+    h = hashlib.sha256(serial.encode()).hexdigest()[:40].upper()
+    return f"RUC{h}"
+
+
 def streebog_hash(data: bytes) -> bytes:
     tmp = "/tmp/_rucoin_block.bin"
     with open(tmp, "wb") as f:
@@ -86,6 +105,12 @@ def streebog_hash(data: bytes) -> bytes:
 
 
 def get_or_create_wallet() -> tuple[bytes, str]:
+    """Возвращает (private_key_pem, address). Адрес берётся из токена."""
+    # Читаем токен для адреса
+    serial = get_token_serial()
+    address = serial_to_address(serial)
+
+    # RSA ключ только для подписи транзакций (если понадобится)
     if os.path.exists(WALLET_FILE):
         with open(WALLET_FILE, "rb") as f:
             key = serialization.load_pem_private_key(f.read(), password=None, backend=default_backend())
@@ -96,12 +121,10 @@ def get_or_create_wallet() -> tuple[bytes, str]:
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.TraditionalOpenSSL,
                 encryption_algorithm=serialization.NoEncryption()))
-    pub = key.public_key().public_bytes(
-        encoding=serialization.Encoding.DER,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo)
-    h = streebog_hash(pub)
-    address = "RUC" + h[:20].hex().upper()
-    return pub, address
+    return key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption()), address
 
 
 # ═══ Блокчейн ═══

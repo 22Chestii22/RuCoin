@@ -37,28 +37,33 @@
       <div class="reveal">
         <span class="eyebrow">Wallet</span>
         <h1 class="section-title" style="margin-bottom: 12px;">Ваш RuCoin кошелёк</h1>
-        <p class="subtitle">Кошелёк привязан к вашему USB-токену JaCarta. Адрес вычисляется из серийного номера — без паролей и сид-фраз.</p>
+        <p class="subtitle">Введите адрес (RUC...) или серийный номер токена — баланс загрузится мгновенно. Без сид-фраз и паролей.</p>
       </div>
     </div>
   </section>
 
-  <!-- ═══════ Auth State (no token connected) ═══════ -->
+  <!-- ═══════ Auth State (no wallet) ═══════ -->
   <section id="authView" class="section-full" style="padding-top: 40px;">
     <div class="section-inner">
-      <div class="wallet-layout" style="justify-content: center;">
-        <div class="wallet-auth fade-up delay-1" style="text-align: center; max-width: 480px;">
-          <h3>Подключите USB-токен</h3>
-          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 20px;">
-            Адрес кошелька привязан к серийному номеру токена. Никаких seed-фраз, паролей и генерации ключей — просто подключите JaCarta через WebUSB.
-          </p>
-          <button class="btn" onclick="handleConnect()" id="connectBtn">Подключить токен</button>
-          <div id="connectStatus" class="status"></div>
+      <div class="wallet-auth fade-up delay-1" style="text-align: center; max-width: 520px; margin: 0 auto;">
+        <h3>Войти в кошелёк</h3>
+        <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 20px;">
+          Укажите адрес <code style="font-size: 0.9em;">RUC...</code> или серийный номер токена JaCarta.
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
+          <input type="text" id="walletInput" placeholder="RUC6A2F... или серийный номер токена" 
+                 style="padding: 14px 16px; font-family: var(--mono); font-size: 0.85em;">
+          <button class="btn" onclick="handleEnter()" id="enterBtn">Войти</button>
         </div>
+        <div id="enterStatus" class="status"></div>
+        <p style="font-size: 0.75em; color: var(--text-secondary); margin-top: 16px;">
+          Адрес получается так: <code>SHA256(serial)[:40]</code>. Узнайте его скриптом <code>python3 wallet.py</code>.
+        </p>
       </div>
     </div>
   </section>
 
-  <!-- ═══════ Dashboard State (wallet exists) ═══════ -->
+  <!-- ═══════ Dashboard State (wallet loaded) ═══════ -->
   <section id="dashView" class="section-full" style="padding-top: 40px; display: none;">
     <div class="section-inner">
       <div class="wallet-layout">
@@ -74,12 +79,12 @@
           <div class="wallet-addr" id="addressDisplay"></div>
           <button class="copy-btn" onclick="copyAddress()" style="margin-top: 6px;">[ копировать ]</button>
 
-          <h3 style="margin-top: 28px;">Серийный номер токена</h3>
-          <div class="wallet-addr" id="serialDisplay" style="font-size: 0.82em; opacity: 0.7;"></div>
+          <h3 style="margin-top: 28px;">Источник</h3>
+          <div class="wallet-addr" id="sourceDisplay" style="font-size: 0.82em; opacity: 0.7;"></div>
 
           <div class="logout-bar">
-            <span style="font-size: 0.78em; color: var(--text-secondary);">Токен подключён</span>
-            <button class="btn outline" onclick="handleDisconnect()" style="font-size: 0.78em; padding: 6px 14px;">Отключить токен</button>
+            <span style="font-size: 0.78em; color: var(--text-secondary);">Кошелёк загружен</span>
+            <button class="btn outline" onclick="handleLogout()" style="font-size: 0.78em; padding: 6px 14px;">Выйти</button>
           </div>
         </div>
 
@@ -129,12 +134,12 @@
 </main>
 
 <footer>
-  <div style="margin-bottom: 8px;">© 2026 RuCoin · Кошелёк привязан к USB-токену</div>
+  <div style="margin-bottom: 8px;">© 2026 RuCoin · Кошелёк по адресу / серийнику</div>
   <div class="watermark-small">◎ R</div>
 </footer>
 
 <!-- ═══════════════════════════════════════
-     Wallet Logic (unchanged from original)
+     Wallet Logic
      ═══════════════════════════════════════ -->
 <script>
 /* ──── Init ──── */
@@ -158,19 +163,19 @@ let currentTab = 'send';
 
 /* ──── View switching ──── */
 function renderView() {
-  const token = RuCoin.loadToken();
+  const wallet = RuCoin.loadWallet();
   const auth = document.getElementById('authView');
   const dash = document.getElementById('dashView');
-  if (!token) {
+  if (!wallet) {
     auth.style.display = 'block';
     dash.style.display = 'none';
     return;
   }
   auth.style.display = 'none';
   dash.style.display = 'block';
-  document.getElementById('addressDisplay').textContent = token.address;
-  document.getElementById('receiveAddress').textContent = token.address;
-  document.getElementById('serialDisplay').textContent = token.serial;
+  document.getElementById('addressDisplay').textContent = wallet.address;
+  document.getElementById('receiveAddress').textContent = wallet.address;
+  document.getElementById('sourceDisplay').textContent = wallet.source || wallet.address;
   const balance = RuCoin.getBalance();
   document.getElementById('balanceDisplay').textContent = balance.toFixed(4);
   renderHistory();
@@ -179,26 +184,47 @@ function renderView() {
   });
 }
 
-/* ──── Connect token ──── */
-async function handleConnect() {
-  const btn = document.getElementById('connectBtn');
-  const status = document.getElementById('connectStatus');
+/* ──── Enter wallet ──── */
+async function handleEnter() {
+  const input = document.getElementById('walletInput').value.trim();
+  const btn = document.getElementById('enterBtn');
+  const status = document.getElementById('enterStatus');
+  
+  if (!input) {
+    status.className = 'status error show';
+    status.textContent = 'Введите адрес или серийный номер';
+    return;
+  }
+
   btn.disabled = true;
-  btn.textContent = 'Подключаю токен…';
+  btn.textContent = 'Загружаю…';
   status.className = 'status info show';
-  status.textContent = 'Запрос доступа к USB-токену…';
+  status.textContent = 'Вычисляю адрес…';
+
   try {
-    const token = await RuCoin.connectToken();
-    RuCoin.saveToken(token);
+    let address, source;
+    if (input.startsWith('RUC') && input.length === 43) {
+      // Это уже адрес
+      if (!RuCoin.isValidAddress(input)) throw new Error('Неверный формат адреса');
+      address = input.toUpperCase();
+      source = 'введён адрес';
+    } else {
+      // Это серийный номер — считаем адрес
+      address = await RuCoin.addressFromSerial(input);
+      source = `серийный: ${input}`;
+    }
+
+    const walletData = { address, source, enteredAt: Date.now() };
+    RuCoin.saveWallet(walletData);
     status.className = 'status success show';
-    status.textContent = 'Токен подключён! Адрес: ' + token.address.slice(0, 16) + '…';
+    status.textContent = 'Готово! Адрес: ' + address.slice(0, 16) + '…';
     renderView();
   } catch (e) {
     status.className = 'status error show';
     status.textContent = 'Ошибка: ' + e.message;
   }
   btn.disabled = false;
-  btn.textContent = 'Подключить токен';
+  btn.textContent = 'Войти';
 }
 
 /* ──── Send ──── */
@@ -221,18 +247,18 @@ function handleSend() {
 
 /* ──── Copy ──── */
 function copyAddress() {
-  const token = RuCoin.loadToken();
-  if (!token) return;
-  navigator.clipboard.writeText(token.address).then(() => {
+  const wallet = RuCoin.loadWallet();
+  if (!wallet) return;
+  navigator.clipboard.writeText(wallet.address).then(() => {
     const btn = document.querySelector('.copy-btn');
     if (btn) { btn.textContent = '[ скопировано ]'; setTimeout(() => btn.textContent = '[ копировать ]', 2000); }
   });
 }
 
-/* ──── Disconnect ──── */
-function handleDisconnect() {
-  if (!confirm('Отключить токен? Данные кошелька будут удалены из этого браузера. При повторном подключении адрес восстановится из серийного номера токена.')) return;
-  RuCoin.clearToken();
+/* ──── Logout ──── */
+function handleLogout() {
+  if (!confirm('Выйти? Кошелёк удалится из этого браузера.')) return;
+  RuCoin.clearWallet();
   renderView();
 }
 

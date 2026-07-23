@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════
    RuCoin Wallet — Browser-based
-   Token-bound · WebUSB · localStorage
+   Manual address entry · localStorage
    ═══════════════════════════════════════ */
 
 /* ──── Crypto helpers ──── */
@@ -13,41 +13,33 @@ async function sha256(data) {
   return new Uint8Array(await crypto.subtle.digest('SHA-256', data));
 }
 
-/* ──── WebUSB: connect to JaCarta token ──── */
+/* ──── Address from serial (same as Python) ──── */
 
-const JACARTA_VENDOR = 0x24dc;
+async function addressFromSerial(serial) {
+  const addrHash = await sha256(new TextEncoder().encode(serial.trim()));
+  return 'RUC' + toHex(addrHash).slice(0, 40).toUpperCase();
+}
 
-async function connectToken() {
-  if (!navigator.usb) {
-    throw new Error('WebUSB не поддерживается в этом браузере. Используй Chrome/Edge с HTTPS.');
-  }
-  const device = await navigator.usb.requestDevice({
-    filters: [{ vendorId: JACARTA_VENDOR }]
-  });
-  await device.open();
-  const serial = device.serialNumber || 'unknown';
-  await device.close();
-  const addrHash = await sha256(new TextEncoder().encode(serial));
-  const address = 'RUC' + toHex(addrHash).slice(0, 40).toUpperCase();
-  return { serial, address };
+function isValidAddress(addr) {
+  return /^RUC[A-F0-9]{40}$/i.test(addr);
 }
 
 /* ──── Storage ──── */
 
-const STORAGE_KEY = 'rucoin_token';
+const STORAGE_KEY = 'rucoin_wallet';
 
-function saveToken(data) {
+function saveWallet(data) {
   const info = { ...data, connectedAt: Date.now() };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(info));
   return info;
 }
 
-function loadToken() {
+function loadWallet() {
   const raw = localStorage.getItem(STORAGE_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
-function clearToken() {
+function clearWallet() {
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem('rucoin_txs');
 }
@@ -82,8 +74,8 @@ function sendRuc(to, amount) {
   const balance = getBalance();
   if (amount > balance) return { error: `Insufficient balance. Need ${amount.toFixed(4)} RUC, have ${balance.toFixed(4)}` };
   if (!to || to.length < 10) return { error: 'Invalid recipient address' };
-  const token = loadToken();
-  const tx = { type: 'send', from: token.address, to, amount, fee: 0, time: Date.now() };
+  const wallet = loadWallet();
+  const tx = { type: 'send', from: wallet.address, to, amount, fee: 0, time: Date.now() };
   const txs = addTx(tx);
   localStorage.setItem('rucoin_txs', JSON.stringify(txs));
   return { success: true, tx };
@@ -92,9 +84,9 @@ function sendRuc(to, amount) {
 /* ──── Mining reward ──── */
 
 function addMiningReward(amount = 0.1) {
-  const token = loadToken();
-  if (!token) return;
-  const tx = { type: 'mining', from: 'SYSTEM', to: token.address, amount, fee: 0 };
+  const wallet = loadWallet();
+  if (!wallet) return;
+  const tx = { type: 'mining', from: 'SYSTEM', to: wallet.address, amount, fee: 0 };
   const txs = addTx(tx);
   localStorage.setItem('rucoin_txs', JSON.stringify(txs));
 }
@@ -102,10 +94,11 @@ function addMiningReward(amount = 0.1) {
 /* ──── Export ──── */
 
 window.RuCoin = {
-  connectToken,
-  loadToken,
-  saveToken,
-  clearToken,
+  addressFromSerial,
+  isValidAddress,
+  saveWallet,
+  loadWallet,
+  clearWallet,
   getTxs,
   getBalance,
   sendRuc,
