@@ -375,7 +375,7 @@ function addTx(tx) {
 
 function getBalance() {
   const txs = getTxs();
-  let balance = 1000; // genesis bonus
+  let balance = 0;
   for (const tx of txs) {
     if (tx.type === 'receive' || tx.type === 'mining') balance += tx.amount;
     if (tx.type === 'send') balance -= (tx.amount + (tx.fee || 0));
