@@ -5,32 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Кошелёк — RuCoin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
   <script src="/wallet.js"></script>
-  <style>
-    .wallet-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
-    .wallet-hero { padding: 56px 0 32px; }
-    .wallet-hero h1 { margin-bottom: 8px; }
-    .mnemonic-area { background: var(--surface-secondary); border-radius: 8px; padding: 16px; font-family: var(--mono); font-size: 0.82em; line-height: 1.8; word-break: break-word; margin: 8px 0 6px; user-select: all; }
-    .warning-note { font-size: 0.78em; color: var(--text-secondary); padding: 10px 14px; background: #FFF8E7; border-radius: 6px; margin: 6px 0 16px; border: 1px solid #F0E6C5; }
-    .copy-btn { font-size: 0.75em; padding: 3px 10px; cursor: pointer; background: none; border: 1px solid var(--border); border-radius: 4px; font-family: var(--sans); color: var(--text-secondary); }
-    .copy-btn:hover { background: var(--surface-secondary); }
-    .tx-empty { color: var(--text-secondary); font-size: 0.88em; padding: 24px 0; text-align: center; }
-    .logout-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
-    .logout-bar .btn { font-size: 0.8em; padding: 6px 14px; }
-    .balance-row { display: flex; align-items: baseline; gap: 12px; }
-    .balance-row .usd { font-size: 1em; color: var(--text-secondary); }
-    .tx-info { font-size: 0.78em; color: var(--text-secondary); }
-    @media (max-width: 860px) { .wallet-layout { grid-template-columns: 1fr; } }
-    .btn-group { display: flex; gap: 8px; margin-top: 16px; }
-  </style>
 </head>
 <body>
 
+<!-- Watermark -->
+<div class="watermark" aria-hidden="true">◎ R</div>
+
+<!-- Custom cursor -->
+<div class="cursor-dot"></div>
+<div class="cursor-ring"></div>
+
 <header>
   <nav>
-    <a href="/" class="logo">◎ RuCoin <span>/ ruc</span></a>
+    <a href="/" class="logo">
+      <span class="logo-mark">◎</span>
+      RuCoin <span>/ ruc</span>
+    </a>
     <a href="/wallet" class="nav-link active">Кошелёк</a>
     <a href="/mine" class="nav-link">Майнинг</a>
     <a href="https://github.com/22Chestii22/RuCoin" class="nav-link" target="_blank">GitHub</a>
@@ -38,106 +31,115 @@
 </header>
 
 <main>
-  <section class="wallet-hero fade-up">
-    <span class="eyebrow">Wallet</span>
-    <h1>Ваш RuCoin кошелёк</h1>
-    <p class="subtitle">Полноценный кошелёк в браузере. Ключи хранятся локально и не покидают ваше устройство.</p>
-  </section>
-
-  <!-- ───── Auth State (no wallet) ───── -->
-  <section id="authView" class="section" style="padding-top: 0;">
-    <div class="wallet-layout">
-      <!-- Create -->
-      <div class="wallet-auth fade-up delay-1">
-        <h3 style="margin-bottom: 4px;">Создать кошелёк</h3>
-        <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 20px;">Генерирует новую пару ключей прямо в браузере. RSA-2048, экспорт закрытого ключа — только через seed-фразу.</p>
-        <button class="btn" onclick="handleCreate()" id="createBtn">◎ Создать кошелёк</button>
-        <div id="createStatus" class="status"></div>
+  <!-- ═══ HERO ═══ -->
+  <section class="section-full" style="padding-bottom: 0; padding-top: 100px;">
+    <div class="section-inner">
+      <div class="reveal">
+        <span class="eyebrow">Wallet</span>
+        <h1 class="section-title" style="margin-bottom: 12px;">Ваш RuCoin кошелёк</h1>
+        <p class="subtitle">Полноценный кошелёк в браузере. Ключи хранятся локально и не покидают ваше устройство.</p>
       </div>
-
-      <!-- Import -->
-      <div class="wallet-auth fade-up delay-2">
-        <h3 style="margin-bottom: 4px;">Импортировать кошелёк</h3>
-        <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 20px;">Введите seed-фразу из 12 слов, чтобы восстановить свой кошелёк.</p>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <textarea id="importPhrase" placeholder="введите seed-фразу из 12 слов…" rows="2"></textarea>
-          <button class="btn outline" onclick="handleImport()" id="importBtn">Восстановить</button>
-        </div>
-        <div id="importStatus" class="status"></div>
-      </div>
-    </div>
-
-    <div style="max-width: 600px; margin: 32px auto 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; text-align: center; font-size: 0.85em; color: var(--text-secondary);">
-      ⚡ Ключи хранятся в <code>localStorage</code> этого браузера. Очистка кэша или сброс браузера удалит кошелёк без возможности восстановления. <strong>Сохраните seed-фразу!</strong>
     </div>
   </section>
 
-  <!-- ───── Dashboard State (wallet exists) ───── -->
-  <section id="dashView" class="section" style="padding-top: 0; display: none;">
-    <div class="wallet-layout">
-      <!-- Left: Balance & Address -->
-      <div class="wallet-dashboard fade-up delay-1">
-        <h3>Баланс</h3>
-        <div class="balance-row">
-          <div class="balance-large" id="balanceDisplay">0</div>
-          <span class="eyebrow" style="margin-bottom: 0;">RUC</span>
+  <!-- ═══════ Auth State (no wallet) ═══════ -->
+  <section id="authView" class="section-full" style="padding-top: 40px;">
+    <div class="section-inner">
+      <div class="wallet-layout">
+        <!-- Create -->
+        <div id="createSection" class="wallet-auth fade-up delay-1">
+          <h3>Создать кошелёк</h3>
+          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 20px;">Генерирует новую пару ключей прямо в браузере. RSA-2048, экспорт закрытого ключа — только через seed-фразу.</p>
+          <button class="btn" onclick="handleCreate()" id="createBtn">◎ Создать кошелёк</button>
+          <div id="createStatus" class="status"></div>
         </div>
 
-        <h3 style="margin-top: 24px;">Адрес кошелька</h3>
-        <div class="wallet-addr" id="addressDisplay"></div>
-        <button class="copy-btn" onclick="copyAddress()" style="margin-top: 6px;">📋 Копировать</button>
-
-        <h3 style="margin-top: 24px;">Seed-фраза</h3>
-        <div class="mnemonic-area" id="mnemonicDisplay"></div>
-        <button class="copy-btn" onclick="copyMnemonic()">📋 Копировать seed-фразу</button>
-        <p style="font-size: 0.75em; color: var(--error-text); margin-top: 4px;">⚠ Никому не сообщайте seed-фразу. Она даёт полный доступ к вашим монетам.</p>
-
-        <div class="logout-bar">
-          <span style="font-size: 0.82em; color: var(--text-secondary);">Кошелёк загружен</span>
-          <button class="btn outline" onclick="handleLogout()" style="font-size: 0.8em; padding: 6px 14px;">✕ Сбросить кошелёк</button>
+        <!-- Import -->
+        <div id="importSection" class="wallet-auth fade-up delay-2">
+          <h3>Импортировать кошелёк</h3>
+          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 20px;">Введите seed-фразу из 12 слов, чтобы восстановить свой кошелёк.</p>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <textarea id="importPhrase" placeholder="введите seed-фразу из 12 слов…" rows="2"></textarea>
+            <button class="btn outline" onclick="handleImport()" id="importBtn">Восстановить</button>
+          </div>
+          <div id="importStatus" class="status"></div>
         </div>
       </div>
 
-      <!-- Right: Send / Receive / History -->
-      <div class="wallet-dashboard fade-up delay-2">
-        <!-- Tabs -->
-        <div class="tab-bar">
-          <button class="tab active" onclick="switchTab('send')" id="tabSend">Отправить</button>
-          <button class="tab" onclick="switchTab('receive')" id="tabReceive">Получить</button>
-          <button class="tab" onclick="switchTab('history')" id="tabHistory">История</button>
-        </div>
+      <div style="max-width: 720px; margin: 32px auto 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; font-size: 0.82em; color: var(--text-secondary);">
+        ⚡ Ключи хранятся в <code>localStorage</code> этого браузера. Очистка кэша или сброс браузера удалит кошелёк без возможности восстановления. <strong>Сохраните seed-фразу!</strong>
+      </div>
+    </div>
+  </section>
 
-        <!-- Send Tab -->
-        <div class="tab-content active" id="panelSend">
-          <div class="send-form">
-            <div>
-              <label for="sendTo">Адрес получателя</label>
-              <input type="text" id="sendTo" placeholder="RUC6A2F...">
-            </div>
-            <div>
-              <label for="sendAmount">Сумма (RUC)</label>
-              <input type="text" id="sendAmount" placeholder="0.1">
-            </div>
-            <div style="font-size: 0.78em; color: var(--text-secondary);">
-              Комиссия сети: <span id="feeDisplay">0.1%</span>
-            </div>
-            <button class="btn" onclick="handleSend()">✈ Отправить</button>
-            <div id="sendStatus" class="status"></div>
+  <!-- ═══════ Dashboard State (wallet exists) ═══════ -->
+  <section id="dashView" class="section-full" style="padding-top: 40px; display: none;">
+    <div class="section-inner">
+      <div class="wallet-layout">
+        <!-- Left: Balance & Address -->
+        <div class="wallet-dashboard fade-up delay-1">
+          <h3>Баланс</h3>
+          <div class="balance-row">
+            <div class="balance-large" id="balanceDisplay">0</div>
+            <span class="eyebrow" style="margin-bottom: 0;">RUC</span>
+          </div>
+
+          <h3 style="margin-top: 28px;">Адрес кошелька</h3>
+          <div class="wallet-addr" id="addressDisplay"></div>
+          <button class="copy-btn" onclick="copyAddress()" style="margin-top: 6px;">📋 Копировать</button>
+
+          <h3 style="margin-top: 28px;">Seed-фраза</h3>
+          <div class="mnemonic-area" id="mnemonicDisplay"></div>
+          <button class="copy-btn" onclick="copyMnemonic()">📋 Копировать seed-фразу</button>
+          <p style="font-size: 0.72em; color: var(--error-text); margin-top: 6px;">⚠ Никому не сообщайте seed-фразу. Она даёт полный доступ к вашим монетам.</p>
+
+          <div class="logout-bar">
+            <span style="font-size: 0.78em; color: var(--text-secondary);">Кошелёк загружен</span>
+            <button class="btn outline" onclick="handleLogout()" style="font-size: 0.78em; padding: 6px 14px;">✕ Сбросить кошелёк</button>
           </div>
         </div>
 
-        <!-- Receive Tab -->
-        <div class="tab-content" id="panelReceive">
-          <h3 style="margin-bottom: 8px;">Ваш адрес для получения</h3>
-          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 12px;">Покажите этот адрес отправителю, чтобы он перевёл вам RUC.</p>
-          <div class="wallet-addr" id="receiveAddress" style="font-size: 0.9em; padding: 16px;"></div>
-          <button class="copy-btn" onclick="copyAddress()">📋 Копировать адрес</button>
-        </div>
+        <!-- Right: Send / Receive / History -->
+        <div class="wallet-dashboard fade-up delay-2">
+          <!-- Tabs -->
+          <div class="tab-bar">
+            <button class="tab active" onclick="switchTab('send')" id="tabSend">Отправить</button>
+            <button class="tab" onclick="switchTab('receive')" id="tabReceive">Получить</button>
+            <button class="tab" onclick="switchTab('history')" id="tabHistory">История</button>
+          </div>
 
-        <!-- History Tab -->
-        <div class="tab-content" id="panelHistory">
-          <div id="txList" class="tx-list">
-            <div class="tx-empty">Транзакций пока нет</div>
+          <!-- Send Tab -->
+          <div class="tab-content active" id="panelSend">
+            <div class="send-form">
+              <div>
+                <label for="sendTo">Адрес получателя</label>
+                <input type="text" id="sendTo" placeholder="RUC6A2F...">
+              </div>
+              <div>
+                <label for="sendAmount">Сумма (RUC)</label>
+                <input type="text" id="sendAmount" placeholder="0.1">
+              </div>
+              <div style="font-size: 0.75em; color: var(--text-secondary);">
+                Комиссия сети: <span id="feeDisplay">0.1%</span>
+              </div>
+              <button class="btn" onclick="handleSend()">✈ Отправить</button>
+              <div id="sendStatus" class="status"></div>
+            </div>
+          </div>
+
+          <!-- Receive Tab -->
+          <div class="tab-content" id="panelReceive">
+            <h3 style="margin-bottom: 8px;">Ваш адрес для получения</h3>
+            <p style="font-size: 0.82em; color: var(--text-secondary); margin-bottom: 12px;">Покажите этот адрес отправителю, чтобы он перевёл вам RUC.</p>
+            <div class="wallet-addr" id="receiveAddress" style="font-size: 0.85em; padding: 16px;"></div>
+            <button class="copy-btn" onclick="copyAddress()">📋 Копировать адрес</button>
+          </div>
+
+          <!-- History Tab -->
+          <div class="tab-content" id="panelHistory">
+            <div id="txList" class="tx-list">
+              <div class="tx-empty">Транзакций пока нет</div>
+            </div>
           </div>
         </div>
       </div>
@@ -146,15 +148,29 @@
 </main>
 
 <footer>
-  © 2026 RuCoin · Ключи хранятся локально
-  <br><span style="font-family: var(--mono); font-size: 0.9em;">◎ R</span>
+  <div style="margin-bottom: 8px;">© 2026 RuCoin · Ключи хранятся локально</div>
+  <div class="watermark-small">◎ R</div>
 </footer>
 
+<!-- ═══════════════════════════════════════
+     Wallet Logic (unchanged from original)
+     ═══════════════════════════════════════ -->
 <script>
 /* ──── Init ──── */
 window.addEventListener('DOMContentLoaded', () => {
   renderView();
   refreshTimer = setInterval(renderView, 3000); // refresh balance every 3s
+  // Trigger reveal animations on wallet sections
+  document.querySelectorAll('.fade-up').forEach(el => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+        }
+      });
+    }, { threshold: 0.08 });
+    observer.observe(el);
+  });
 });
 
 let refreshTimer = null;
@@ -178,6 +194,10 @@ function renderView() {
   const balance = RuCoin.getBalance();
   document.getElementById('balanceDisplay').textContent = balance.toFixed(4);
   renderHistory();
+  // Trigger reveal animation on dashboard elements (they start hidden)
+  requestAnimationFrame(() => {
+    document.querySelectorAll('#dashView .fade-up').forEach(el => el.classList.add('revealed'));
+  });
 }
 
 /* ──── Create wallet ──── */
@@ -313,6 +333,37 @@ function renderHistory() {
     </div>`;
   }).join('');
 }
+</script>
+
+<script>
+// ── Cursor Follower ──
+(function() {
+  const dot = document.querySelector('.cursor-dot');
+  const ring = document.querySelector('.cursor-ring');
+  if (!dot || !ring) return;
+
+  let mouseX = 0, mouseY = 0;
+  let ringX = 0, ringY = 0;
+
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    dot.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+  });
+
+  function animateRing() {
+    ringX += (mouseX - ringX) * 0.12;
+    ringY += (mouseY - ringY) * 0.12;
+    ring.style.transform = `translate(${ringX}px, ${ringY}px)`;
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  document.querySelectorAll('a, button, .wallet-auth, .wallet-dashboard').forEach(el => {
+    el.addEventListener('mouseenter', () => ring.classList.add('hover'));
+    el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
+  });
+})();
 </script>
 
 </body>

@@ -5,27 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RuCoin — криптовалюта на USB-токенах</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
-  <style>
-    .hero-sub { font-family: var(--serif); font-style: italic; font-size: 1.2em; color: var(--text-secondary); }
-    .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 48px 0; }
-    .bento-grid .card:first-child { grid-column: 1 / -1; }
-    .bento-grid .card { padding: 32px; }
-    .spec-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.88em; }
-    .spec-item:last-child { border-bottom: none; }
-    .spec-item dt { color: var(--text-secondary); font-family: var(--mono); font-size: 0.85em; }
-    .spec-item dd { font-weight: 450; }
-    .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
-    @media (max-width: 640px) { .bento-grid { grid-template-columns: 1fr; } }
-    .welcome-message { font-size: 1em; line-height: 1.8; max-width: 640px; margin: 0 auto; text-align: center; }
-  </style>
 </head>
 <body>
 
+<!-- Watermark -->
+<div class="watermark" aria-hidden="true">◎ R</div>
+
+<!-- Custom cursor -->
+<div class="cursor-dot"></div>
+<div class="cursor-ring"></div>
+
 <header>
   <nav>
-    <a href="/" class="logo">◎ RuCoin <span>/ ruc</span></a>
+    <a href="/" class="logo">
+      <span class="logo-mark">◎</span>
+      RuCoin <span>/ ruc</span>
+    </a>
     <a href="/wallet" class="nav-link">Кошелёк</a>
     <a href="/mine" class="nav-link">Майнинг</a>
     <a href="https://github.com/22Chestii22/RuCoin" class="nav-link" target="_blank">GitHub</a>
@@ -33,81 +30,151 @@
 </header>
 
 <main>
+  <!-- ═══ HERO ═══ -->
   <section class="hero">
-    <h1 class="fade-up">Криптовалюта, которую можно&nbsp;потрогать</h1>
-    <p class="hero-sub fade-up delay-1">RuCoin добывается на USB-токенах JaCarta через аппаратный ГОСТ (Стрибог). Никаких видеокарт и ASIC-ферм.</p>
-    <div class="cta-row fade-up delay-2">
-      <a href="/wallet" class="btn">Создать кошелёк</a>
-      <a href="/mine" class="btn outline">Как майнить</a>
+    <div class="hero-bg-text" aria-hidden="true">RuCoin</div>
+    <div class="hero-content">
+      <h1 class="hero-title reveal">Криптовалюта,<br>которую можно<br>потрогать</h1>
+      <p class="hero-sub reveal delay-2">RuCoin добывается на USB-токенах JaCarta через аппаратный ГОСТ (Стрибог). Никаких видеокарт и ASIC-ферм.</p>
+      <div class="btn-group reveal delay-3">
+        <a href="/wallet" class="btn">Создать кошелёк</a>
+        <a href="/mine" class="btn outline">Как майнить</a>
+      </div>
     </div>
   </section>
 
-  <section class="section">
-    <div class="bento-grid">
-      <div class="card">
-        <span class="eyebrow">Почему RuCoin</span>
-        <h2>Токен — внутри вашего устройства</h2>
-        <p style="margin-top: 8px;">
-          Кошелёк RuCoin — это не файл на диске, а ключ внутри USB-токена JaCarta.
-          Чтобы отправить транзакцию, нужен физический доступ к токену.
-          Аппаратный hash Стрибог (ГОСТ Р 34.11-2012) делает майнинг на видеокартах и ASIC&shy;ах невозможным по определению.
+  <!-- ═══ WHY RuCoin ═══ -->
+  <section class="section-full">
+    <div class="section-inner">
+      <span class="eyebrow reveal">Почему RuCoin</span>
+      <h2 class="section-title reveal delay-1">Токен — внутри<br>вашего устройства</h2>
+      <p class="section-sub reveal delay-2" style="margin-bottom: 48px;">
+        Цифровая наличность, которая существует в физическом мире.
+      </p>
+
+      <div class="bento">
+        <div class="bento-card-hover reveal delay-2">
+          <span class="eyebrow">Философия</span>
+          <p style="margin-top: 8px; font-size: 0.95em; line-height: 1.8;">
+            Кошелёк RuCoin — это не файл на диске, а ключ внутри USB-токена JaCarta.
+            Чтобы отправить транзакцию, нужен физический доступ к токену.
+            Аппаратный хеш Стрибог (ГОСТ Р 34.11-2012) делает майнинг на видеокартах
+            и ASIC-ах невозможным по определению.
+          </p>
+        </div>
+        <div class="bento-card-hover reveal delay-3">
+          <span class="eyebrow">Скорость</span>
+          <div class="stat-number">~0.1 H/s</div>
+          <p style="margin-top: 8px;">Один блок каждые 8–9 секунд. Это не майнинг-ферма — это философия.</p>
+        </div>
+        <div class="bento-card-hover reveal delay-4">
+          <span class="eyebrow">Сеть</span>
+          <div style="margin-top: 12px;">
+            <dl class="spec-item"><dt>Алгоритм</dt><dd>Стрибог</dd></dl>
+            <dl class="spec-item"><dt>Токен</dt><dd>JaCarta</dd></dl>
+            <dl class="spec-item"><dt>Сеть</dt><dd>RuCoin</dd></dl>
+            <dl class="spec-item"><dt>Язык</dt><dd>Python</dd></dl>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ HOW IT WORKS ═══ -->
+  <section class="section-full">
+    <div class="section-inner">
+      <span class="eyebrow reveal">Как это работает</span>
+      <h2 class="section-title reveal delay-1">Три шага до<br>первой монеты</h2>
+
+      <div class="steps" style="margin-top: 48px; max-width: 720px;">
+        <div class="step reveal delay-2">
+          <div class="num">1</div>
+          <div class="step-body">
+            <strong>Вставьте USB-токен</strong>
+            <p>JaCarta или любой PKCS#11-совместимый токен с поддержкой Стрибога.</p>
+          </div>
+        </div>
+        <div class="step reveal delay-3">
+          <div class="num">2</div>
+          <div class="step-body">
+            <strong>Запустите майнер</strong>
+            <p><code>python3 rucoin.py</code> — остальное скрипт сделает сам. Он найдёт токен, считает ключи и начнёт майнинг.</p>
+          </div>
+        </div>
+        <div class="step reveal delay-4">
+          <div class="num">3</div>
+          <div class="step-body">
+            <strong>Монеты поступают в кошелёк</strong>
+            <p>Откройте эту же страницу на телефоне — создайте кошелёк и смотрите баланс.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ MANIFESTO ═══ -->
+  <section class="section-full" style="padding-bottom: 80px;">
+    <div class="section-inner">
+      <div class="content-narrow text-center reveal">
+        <p style="font-family: var(--serif); font-size: clamp(1.1em, 2vw, 1.4em); line-height: 1.8; color: var(--text-secondary); font-style: italic;">
+          RuCoin — эксперимент на стыке криптографии, аппаратной безопасности и здравого смысла.
+          <br><br>
+          Это не очередной шиткоин, а попытка сделать криптовалюту физически-осязаемой.
         </p>
       </div>
-      <div class="card">
-        <span class="eyebrow">Скорость</span>
-        <div style="font-family: var(--serif); font-size: 2.6em; font-weight: 450; letter-spacing: -0.03em; margin-top: 4px;">~0.1 H/s</div>
-        <p style="margin-top: 4px;">Один блок каждые 8-9 секунд. Это не майнинг-ферма — это философия.</p>
-      </div>
-      <div class="card">
-        <span class="eyebrow">Технология</span>
-        <dl class="spec-item"><dt>Алгоритм</dt><dd>Стрибог (Streebog)</dd></dl>
-        <dl class="spec-item"><dt>Токен</dt><dd>JaCarta (Aladdin)</dd></dl>
-        <dl class="spec-item"><dt>Сеть</dt><dd>RuCoin</dd></dl>
-        <dl class="spec-item"><dt>Язык</dt><dd>Python, cross-platform</dd></dl>
-      </div>
     </div>
-  </section>
-
-  <section class="section">
-    <span class="eyebrow">Как это работает</span>
-    <h2>Три шага до первой монеты</h2>
-    <div class="steps" style="margin-top: 32px; max-width: 640px;">
-      <div class="step">
-        <div class="num">1</div>
-        <div class="step-body">
-          <strong>Вставьте USB-токен</strong>
-          <p>JaCarta или любой PKCS#11-совместимый токен с поддержкой Стрибога.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="num">2</div>
-        <div class="step-body">
-          <strong>Запустите майнер</strong>
-          <p><code>python3 rucoin.py</code> — остальное скрипт сделает сам. Он найдёт токен, считает ключи и начнёт майнинг.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="num">3</div>
-        <div class="step-body">
-          <strong>Монеты поступают в кошелёк</strong>
-          <p>Откройте эту же страницу на телефоне — создайте кошелёк и смотрите баланс.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section" style="text-align: center; padding-bottom: 0;">
-    <p class="welcome-message">
-      RuCoin — эксперимент на стыке криптографии, аппаратной безопасности и здравого смысла.<br>
-      Это не очередной шиткоин, а попытка сделать криптовалюту физически-осязаемой.
-    </p>
   </section>
 </main>
 
 <footer>
-  © 2026 RuCoin · Сделано с мыслью о приватности
-  <br><span style="font-family: var(--mono); font-size: 0.9em;">◎ R</span>
+  <div style="margin-bottom: 8px;">© 2026 RuCoin · Сделано с мыслью о приватности</div>
+  <div class="watermark-small">◎ R</div>
 </footer>
+
+<script>
+// ── Cursor Follower ──
+(function() {
+  const dot = document.querySelector('.cursor-dot');
+  const ring = document.querySelector('.cursor-ring');
+  if (!dot || !ring) return;
+
+  let mouseX = 0, mouseY = 0;
+  let ringX = 0, ringY = 0;
+
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    dot.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+  });
+
+  function animateRing() {
+    ringX += (mouseX - ringX) * 0.12;
+    ringY += (mouseY - ringY) * 0.12;
+    ring.style.transform = `translate(${ringX}px, ${ringY}px)`;
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  // Hover effect on interactive elements
+  document.querySelectorAll('a, button, .card, .step, .bento-card-hover').forEach(el => {
+    el.addEventListener('mouseenter', () => ring.classList.add('hover'));
+    el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
+  });
+})();
+
+// ── Scroll Reveal ──
+(function() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed');
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal, .fade-up').forEach(el => observer.observe(el));
+})();
+</script>
 
 </body>
 </html>
