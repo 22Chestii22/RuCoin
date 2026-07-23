@@ -4,98 +4,316 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Кошелёк — RuCoin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+  <script src="/wallet.js"></script>
+  <style>
+    .wallet-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    .wallet-hero { padding: 56px 0 32px; }
+    .wallet-hero h1 { margin-bottom: 8px; }
+    .mnemonic-area { background: var(--surface-secondary); border-radius: 8px; padding: 16px; font-family: var(--mono); font-size: 0.82em; line-height: 1.8; word-break: break-word; margin: 8px 0 6px; user-select: all; }
+    .warning-note { font-size: 0.78em; color: var(--text-secondary); padding: 10px 14px; background: #FFF8E7; border-radius: 6px; margin: 6px 0 16px; border: 1px solid #F0E6C5; }
+    .copy-btn { font-size: 0.75em; padding: 3px 10px; cursor: pointer; background: none; border: 1px solid var(--border); border-radius: 4px; font-family: var(--sans); color: var(--text-secondary); }
+    .copy-btn:hover { background: var(--surface-secondary); }
+    .tx-empty { color: var(--text-secondary); font-size: 0.88em; padding: 24px 0; text-align: center; }
+    .logout-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .logout-bar .btn { font-size: 0.8em; padding: 6px 14px; }
+    .balance-row { display: flex; align-items: baseline; gap: 12px; }
+    .balance-row .usd { font-size: 1em; color: var(--text-secondary); }
+    .tx-info { font-size: 0.78em; color: var(--text-secondary); }
+    @media (max-width: 860px) { .wallet-layout { grid-template-columns: 1fr; } }
+    .btn-group { display: flex; gap: 8px; margin-top: 16px; }
+  </style>
 </head>
 <body>
-  <header>
-    <nav>
-      <a href="/" class="logo">RuCoin <span>/</span></a>
-      <a href="/wallet">Кошелёк</a>
-      <a href="/mine">Майнинг</a>
-    </nav>
-  </header>
 
-  <main>
-    <div class="hero" style="padding-bottom:40px">
-      <p class="eyebrow">Wallet</p>
-      <h1>Кошелёк</h1>
-      <p>Твой кошелёк — это твой токен. Внутри JaCarta уже есть уникальный ключ. Адрес читается с него автоматически.</p>
-    </div>
+<header>
+  <nav>
+    <a href="/" class="logo">◎ RuCoin <span>/ ruc</span></a>
+    <a href="/wallet" class="nav-link active">Кошелёк</a>
+    <a href="/mine" class="nav-link">Майнинг</a>
+    <a href="https://github.com/22Chestii22/RuCoin" class="nav-link" target="_blank">GitHub</a>
+  </nav>
+</header>
 
-    <div class="section" style="padding-top:0">
-      <div class="wallet-card" style="text-align:center">
-        <div id="walletConnected" style="display:none">
-          <p style="color:var(--text-secondary);font-size:0.82em;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Баланс</p>
-          <div class="balance-display" id="balance">0.00 RUC</div>
-          <p style="font-size:0.78em;color:var(--text-secondary);margin-bottom:12px">на адресе</p>
-          <div class="wallet-addr" id="walletAddress"></div>
-          <div class="status success" style="margin-top:16px">✅ Токен подключён. Адрес получен с чипа.</div>
+<main>
+  <section class="wallet-hero fade-up">
+    <span class="eyebrow">Wallet</span>
+    <h1>Ваш RuCoin кошелёк</h1>
+    <p class="subtitle">Полноценный кошелёк в браузере. Ключи хранятся локально и не покидают ваше устройство.</p>
+  </section>
+
+  <!-- ───── Auth State (no wallet) ───── -->
+  <section id="authView" class="section" style="padding-top: 0;">
+    <div class="wallet-layout">
+      <!-- Create -->
+      <div class="wallet-auth fade-up delay-1">
+        <h3 style="margin-bottom: 4px;">Создать кошелёк</h3>
+        <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 20px;">Генерирует новую пару ключей прямо в браузере. RSA-2048, экспорт закрытого ключа — только через seed-фразу.</p>
+        <button class="btn" onclick="handleCreate()" id="createBtn">◎ Создать кошелёк</button>
+        <div id="createStatus" class="status"></div>
+      </div>
+
+      <!-- Import -->
+      <div class="wallet-auth fade-up delay-2">
+        <h3 style="margin-bottom: 4px;">Импортировать кошелёк</h3>
+        <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 20px;">Введите seed-фразу из 12 слов, чтобы восстановить свой кошелёк.</p>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <textarea id="importPhrase" placeholder="введите seed-фразу из 12 слов…" rows="2"></textarea>
+          <button class="btn outline" onclick="handleImport()" id="importBtn">Восстановить</button>
         </div>
-
-        <div id="walletDisconnected">
-          <div style="width:64px;height:64px;border-radius:50%;background:#f0f0ef;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:1.5em">🔌</div>
-          <h3 style="margin-bottom:8px">Подключи токен</h3>
-          <p style="color:var(--text-secondary);font-size:0.88em;max-width:360px;margin:0 auto 20px">Вставь JaCarta в USB и запусти `rucoin.py` — адрес определится автоматически по твоему ключу на чипе.</p>
-          <pre style="font-size:0.8em;padding:12px 16px;text-align:left">python3 rucoin.py</pre>
-          <button class="btn" onclick="simulateConnect()" style="margin-top:16px">🔄 Проверить токен</button>
-          <div id="status" class="status" style="margin-top:16px"></div>
-        </div>
+        <div id="importStatus" class="status"></div>
       </div>
     </div>
 
-    <div class="section">
-      <h2>Как это работает</h2>
-      <div class="steps">
-        <div class="step">
-          <div class="num">01</div>
-          <div class="step-body">
-            <strong>Внутри чипа — ключ</strong>
-            <p>На твоём токене уже есть уникальная ключевая пара (сертификат Промсвязьбанка). Приватный ключ никогда не покидает чип.</p>
+    <div style="max-width: 600px; margin: 32px auto 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; text-align: center; font-size: 0.85em; color: var(--text-secondary);">
+      ⚡ Ключи хранятся в <code>localStorage</code> этого браузера. Очистка кэша или сброс браузера удалит кошелёк без возможности восстановления. <strong>Сохраните seed-фразу!</strong>
+    </div>
+  </section>
+
+  <!-- ───── Dashboard State (wallet exists) ───── -->
+  <section id="dashView" class="section" style="padding-top: 0; display: none;">
+    <div class="wallet-layout">
+      <!-- Left: Balance & Address -->
+      <div class="wallet-dashboard fade-up delay-1">
+        <h3>Баланс</h3>
+        <div class="balance-row">
+          <div class="balance-large" id="balanceDisplay">0</div>
+          <span class="eyebrow" style="margin-bottom: 0;">RUC</span>
+        </div>
+
+        <h3 style="margin-top: 24px;">Адрес кошелька</h3>
+        <div class="wallet-addr" id="addressDisplay"></div>
+        <button class="copy-btn" onclick="copyAddress()" style="margin-top: 6px;">📋 Копировать</button>
+
+        <h3 style="margin-top: 24px;">Seed-фраза</h3>
+        <div class="mnemonic-area" id="mnemonicDisplay"></div>
+        <button class="copy-btn" onclick="copyMnemonic()">📋 Копировать seed-фразу</button>
+        <p style="font-size: 0.75em; color: var(--error-text); margin-top: 4px;">⚠ Никому не сообщайте seed-фразу. Она даёт полный доступ к вашим монетам.</p>
+
+        <div class="logout-bar">
+          <span style="font-size: 0.82em; color: var(--text-secondary);">Кошелёк загружен</span>
+          <button class="btn outline" onclick="handleLogout()" style="font-size: 0.8em; padding: 6px 14px;">✕ Сбросить кошелёк</button>
+        </div>
+      </div>
+
+      <!-- Right: Send / Receive / History -->
+      <div class="wallet-dashboard fade-up delay-2">
+        <!-- Tabs -->
+        <div class="tab-bar">
+          <button class="tab active" onclick="switchTab('send')" id="tabSend">Отправить</button>
+          <button class="tab" onclick="switchTab('receive')" id="tabReceive">Получить</button>
+          <button class="tab" onclick="switchTab('history')" id="tabHistory">История</button>
+        </div>
+
+        <!-- Send Tab -->
+        <div class="tab-content active" id="panelSend">
+          <div class="send-form">
+            <div>
+              <label for="sendTo">Адрес получателя</label>
+              <input type="text" id="sendTo" placeholder="RUC6A2F...">
+            </div>
+            <div>
+              <label for="sendAmount">Сумма (RUC)</label>
+              <input type="text" id="sendAmount" placeholder="0.1">
+            </div>
+            <div style="font-size: 0.78em; color: var(--text-secondary);">
+              Комиссия сети: <span id="feeDisplay">0.1%</span>
+            </div>
+            <button class="btn" onclick="handleSend()">✈ Отправить</button>
+            <div id="sendStatus" class="status"></div>
           </div>
         </div>
-        <div class="step">
-          <div class="num">02</div>
-          <div class="step-body">
-            <strong>Адрес = хэш ключа</strong>
-            <p>Публичный ключ читается с токена (без PIN), хэшируется Стрибогом — получается твой уникальный адрес кошелька.</p>
-          </div>
+
+        <!-- Receive Tab -->
+        <div class="tab-content" id="panelReceive">
+          <h3 style="margin-bottom: 8px;">Ваш адрес для получения</h3>
+          <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 12px;">Покажите этот адрес отправителю, чтобы он перевёл вам RUC.</p>
+          <div class="wallet-addr" id="receiveAddress" style="font-size: 0.9em; padding: 16px;"></div>
+          <button class="copy-btn" onclick="copyAddress()">📋 Копировать адрес</button>
         </div>
-        <div class="step">
-          <div class="num">03</div>
-          <div class="step-body">
-            <strong>Всё. Больше ничего не нужно</strong>
-            <p>Никаких seed-фраз, никаких паролей, никакого импорта. Твой кошелёк — это физический токен в USB.</p>
+
+        <!-- History Tab -->
+        <div class="tab-content" id="panelHistory">
+          <div id="txList" class="tx-list">
+            <div class="tx-empty">Транзакций пока нет</div>
           </div>
         </div>
       </div>
     </div>
-  </main>
+  </section>
+</main>
 
-  <footer>
-    <p>RuCoin — экспериментальный проект. Не является инвестиционной рекомендацией.</p>
-  </footer>
+<footer>
+  © 2026 RuCoin · Ключи хранятся локально
+  <br><span style="font-family: var(--mono); font-size: 0.9em;">◎ R</span>
+</footer>
 
-  <script>
-    function simulateConnect() {
-      const status = document.getElementById('status');
-      const disconnected = document.getElementById('walletDisconnected');
+<script>
+/* ──── Init ──── */
+window.addEventListener('DOMContentLoaded', () => {
+  renderView();
+  refreshTimer = setInterval(renderView, 3000); // refresh balance every 3s
+});
 
-      status.className = 'status';
-      status.textContent = '⏳ Читаю публичный ключ с токена...';
+let refreshTimer = null;
+let currentTab = 'send';
 
-      setTimeout(() => {
-        // Эмулируем получение адреса с токена
-        // В реальности это делает rucoin.py через PKCS#11
-        const addr = 'RUC' + Array.from({length:40}, () =>
-          '0123456789ABCDEF'[Math.floor(Math.random()*16)]).join('');
+/* ──── View switching ──── */
+function renderView() {
+  const wallet = RuCoin.loadWallet();
+  const auth = document.getElementById('authView');
+  const dash = document.getElementById('dashView');
+  if (!wallet) {
+    auth.style.display = 'block';
+    dash.style.display = 'none';
+    return;
+  }
+  auth.style.display = 'none';
+  dash.style.display = 'block';
+  document.getElementById('addressDisplay').textContent = wallet.address;
+  document.getElementById('receiveAddress').textContent = wallet.address;
+  document.getElementById('mnemonicDisplay').textContent = wallet.mnemonic;
+  const balance = RuCoin.getBalance();
+  document.getElementById('balanceDisplay').textContent = balance.toFixed(4);
+  renderHistory();
+}
 
-        disconnected.style.display = 'none';
-        document.getElementById('walletConnected').style.display = 'block';
-        document.getElementById('walletAddress').textContent = addr;
-        document.getElementById('balance').textContent = '0.00 RUC';
-      }, 2000);
-    }
-  </script>
+/* ──── Create wallet ──── */
+async function handleCreate() {
+  const btn = document.getElementById('createBtn');
+  const status = document.getElementById('createStatus');
+  btn.disabled = true;
+  btn.textContent = '⏳ Генерируем ключи…';
+  status.className = 'status info show';
+  status.textContent = 'Генерация RSA-2048 пары ключей… Это может занять несколько секунд.';
+  try {
+    const wallet = await RuCoin.generateWallet();
+    RuCoin.saveWallet(wallet);
+    status.className = 'status success show';
+    status.textContent = '✅ Кошелёк создан! Сохраните seed-фразу.';
+    renderView();
+  } catch (e) {
+    status.className = 'status error show';
+    status.textContent = '❌ Ошибка: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = '◎ Создать кошелёк';
+}
+
+/* ──── Import wallet ──── */
+async function handleImport() {
+  const btn = document.getElementById('importBtn');
+  const status = document.getElementById('importStatus');
+  const phrase = document.getElementById('importPhrase').value.trim();
+  if (!phrase) {
+    status.className = 'status error show';
+    status.textContent = 'Введите seed-фразу.';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '⏳ Восстанавливаем…';
+  status.className = 'status info show';
+  status.textContent = 'Восстановление кошелька из seed-фразы…';
+  try {
+    const wallet = await RuCoin.recoverWallet(phrase);
+    RuCoin.saveWallet(wallet);
+    status.className = 'status success show';
+    status.textContent = '✅ Кошелёк восстановлен!';
+    renderView();
+  } catch (e) {
+    status.className = 'status error show';
+    status.textContent = '❌ Ошибка: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Восстановить';
+}
+
+/* ──── Send ──── */
+function handleSend() {
+  const to = document.getElementById('sendTo').value.trim();
+  const amount = document.getElementById('sendAmount').value.trim();
+  const status = document.getElementById('sendStatus');
+  const result = RuCoin.sendRuc(to, amount);
+  if (result.error) {
+    status.className = 'status error show';
+    status.textContent = '❌ ' + result.error;
+    return;
+  }
+  status.className = 'status success show';
+  status.textContent = `✅ Отправлено ${result.tx.amount.toFixed(4)} RUC (комиссия: ${result.tx.fee.toFixed(4)} RUC)`;
+  document.getElementById('sendTo').value = '';
+  document.getElementById('sendAmount').value = '';
+  renderView();
+}
+
+/* ──── Copy ──── */
+function copyAddress() {
+  const wallet = RuCoin.loadWallet();
+  if (!wallet) return;
+  navigator.clipboard.writeText(wallet.address).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    if (btn) { btn.textContent = '✓ Скопировано'; setTimeout(() => btn.textContent = '📋 Копировать', 2000); }
+  });
+}
+
+function copyMnemonic() {
+  const wallet = RuCoin.loadWallet();
+  if (!wallet) return;
+  navigator.clipboard.writeText(wallet.mnemonic).then(() => {
+    const btn = document.querySelectorAll('.copy-btn');
+    const last = btn[btn.length - 1];
+    if (last) { last.textContent = '✓ Скопировано'; setTimeout(() => last.textContent = '📋 Копировать seed-фразу', 2000); }
+  });
+}
+
+/* ──── Logout ──── */
+function handleLogout() {
+  if (!confirm('Вы уверены? Кошелёк будет удалён из этого браузера. Убедитесь, что у вас есть seed-фраза!')) return;
+  RuCoin.clearWallet();
+  renderView();
+}
+
+/* ──── Tabs ──── */
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+  document.getElementById('panel' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+  if (tab === 'history') renderHistory();
+}
+
+/* ──── History ──── */
+function renderHistory() {
+  const container = document.getElementById('txList');
+  const txs = RuCoin.getTxs();
+  if (txs.length === 0) {
+    container.innerHTML = '<div class="tx-empty">Транзакций пока нет</div>';
+    return;
+  }
+  container.innerHTML = txs.map(tx => {
+    const isSend = tx.type === 'send';
+    const sign = isSend ? '-' : '+';
+    const cls = isSend ? 'negative' : 'positive';
+    const label = isSend ? '→ Отправка' : (tx.type === 'mining' ? '⛏ Майнинг' : '← Получение');
+    const time = new Date(tx.time).toLocaleString('ru-RU');
+    const addr = isSend ? tx.to : (tx.from === 'SYSTEM' ? 'Сеть RuCoin' : tx.from);
+    return `<div class="tx-item">
+      <div>
+        <div>${label}</div>
+        <div class="tx-addr">${addr}</div>
+        <div class="tx-info">${time}</div>
+      </div>
+      <div style="text-align: right;">
+        <div class="tx-amount ${cls}">${sign}${tx.amount.toFixed(4)} RUC</div>
+        ${tx.fee ? `<div class="tx-info">комиссия ${tx.fee.toFixed(4)} RUC</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+</script>
+
 </body>
 </html>

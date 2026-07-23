@@ -4,88 +4,116 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Майнинг — RuCoin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+  <script src="/wallet.js"></script>
+  <style>
+    .mining-hero { padding: 80px 0 48px; max-width: 720px; }
+    .hardware-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 32px; display: flex; gap: 28px; align-items: flex-start; }
+    .hardware-card img { width: 140px; border-radius: 8px; background: var(--surface-secondary); flex-shrink: 0; }
+    .hw-specs { display: flex; flex-direction: column; gap: 6px; }
+    .hw-specs dt { font-family: var(--mono); font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); }
+    .hw-specs dd { font-size: 0.9em; }
+    .hw-specs dd code { font-size: inherit; }
+    .terminal-block { background: #1a1a2e; border-radius: 10px; padding: 20px 24px; font-family: var(--mono); font-size: 0.78em; line-height: 1.8; color: #ddd; white-space: pre; overflow-x: auto; }
+    .terminal-block .prompt { color: #6bba6b; }
+    @media (max-width: 640px) { .hardware-card { flex-direction: column; } .hardware-card img { width: 100%; max-width: 240px; } }
+  </style>
 </head>
 <body>
-  <header>
-    <nav>
-      <a href="/" class="logo">RuCoin <span>/</span></a>
-      <a href="/wallet">Кошелёк</a>
-      <a href="/mine">Майнинг</a>
-    </nav>
-  </header>
 
-  <main>
-    <div class="hero" style="padding-bottom:40px">
-      <p class="eyebrow">Mining</p>
-      <h1>Майнинг RuCoin</h1>
-      <p>Вставь токен → запусти одну команду → майнится на твой кошелёк.</p>
-    </div>
+<header>
+  <nav>
+    <a href="/" class="logo">◎ RuCoin <span>/ ruc</span></a>
+    <a href="/wallet" class="nav-link">Кошелёк</a>
+    <a href="/mine" class="nav-link active">Майнинг</a>
+    <a href="https://github.com/22Chestii22/RuCoin" class="nav-link" target="_blank">GitHub</a>
+  </nav>
+</header>
 
-    <div class="section" style="padding-top:0;border:none">
-      <div class="card" style="max-width:600px;margin:0 auto;text-align:center;padding:40px">
-        <p style="font-size:0.82em;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px">Быстрый старт</p>
-        <pre style="font-size:0.9em;padding:16px 20px;text-align:left;margin:0">git clone https://github.com/yourname/rucoin
-cd rucoin
-python3 rucoin.py</pre>
-        <p style="color:var(--text-secondary);font-size:0.85em;margin-top:16px">Всё. Три команды. Дальше майнер сам подхватит твой токен.</p>
+<main>
+  <section class="mining-hero fade-up">
+    <span class="eyebrow">Hashing power</span>
+    <h1>Как майнить RuCoin</h1>
+    <p class="subtitle" style="margin-top: 8px;">Вам понадобится USB-токен JaCarta (любая модель с поддержкой Стрибога) и компьютер.</p>
+  </section>
+
+  <section class="section" style="padding-top: 0;">
+    <div class="hardware-card fade-up delay-1">
+      <div>
+        <div style="width: 140px; height: 100px; background: var(--surface-secondary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5em; color: var(--text-secondary);">◎</div>
+      </div>
+      <div>
+        <h3>JaCarta ГОСТ / JaCarta-2 ГОСТ</h3>
+        <p style="font-size: 0.88em; margin: 6px 0 12px;">USB-токен с поддержкой аппаратного хеширования Стрибог (ГОСТ Р 34.11-2012).</p>
+        <dl class="hw-specs">
+          <dt>Vendor ID</dt><dd><code>24dc:0101</code></dd>
+          <dt>PKCS#11 library</dt><dd><code>/usr/lib/libjcPKCS11-2.so</code></dd>
+          <dt>Hash speed</dt><dd>~0.1 H/s (один блок ~9 секунд)</dd>
+          <dt>Hash algorithm</dt><dd>GOST R 34.11-2012 (256-bit Streebog)</dd>
+        </dl>
       </div>
     </div>
+  </section>
 
-    <div class="section">
-      <h2>Что делает майнер</h2>
-      <div class="steps">
-        <div class="step">
-          <div class="num">01</div>
-          <div class="step-body">
-            <strong>Подхватывает твой токен</strong>
-            <p>Скрипт находит JaCarta, читает публичный ключ с чипа (тот что от Промсвязьбанка).</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="num">02</div>
-          <div class="step-body">
-            <strong>Вычисляет твой адрес</strong>
-            <p>Хэширует ключ Стрибогом — получается уникальный адрес кошелька. Никаких созданий, импортов и seed-фраз.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="num">03</div>
-          <div class="step-body">
-            <strong>Начинает майнить</strong>
-            <p>Перебирает nonce, хэширует данные через аппаратный Стрибог на токене, проверяет сложность. Нашёл блок — награда твоя.</p>
-          </div>
-        </div>
-      </div>
-    </div>
+  <section class="section">
+    <span class="eyebrow">Установка</span>
+    <h2>Настройка окружения</h2>
 
-    <div class="section">
-      <h2>Системные требования</h2>
-      <table>
-        <tr><th>OS</th><th>PKCS#11 библиотека</th><th>Статус</th></tr>
-        <tr><td>Linux (Arch / Ubuntu / Debian / Fedora)</td><td><code>libjcPKCS11-2.so</code></td><td><span class="tag green" style="margin:0">Работает</span></td></tr>
-        <tr><td>macOS</td><td><code>libjcPKCS11-2.dylib</code></td><td><span class="tag" style="margin:0">Ожидает теста</span></td></tr>
-        <tr><td>Windows</td><td><code>jcPKCS11-2.dll</code></td><td><span class="tag" style="margin:0">Ожидает теста</span></td></tr>
-      </table>
-    </div>
+    <p style="margin-bottom: 8px;"><strong>Linux (Arch / Debian / Ubuntu)</strong></p>
+    <div class="terminal-block">sudo pacman -S opensc ccid pcsc-tools libp11  # Arch
+# или
+sudo apt install opensc pcscd libp11-dev        # Debian
 
-    <div class="section">
-      <h2>Хэшрейт</h2>
-      <table>
-        <tr><th>Конфигурация</th><th>Хэшей/с</th></tr>
-        <tr><td>1 токен</td><td>~0.1 H/s</td></tr>
-        <tr><td>10 токенов в USB-хабе</td><td>~1 H/s</td></tr>
-        <tr><td>50 токенов</td><td>~5 H/s</td></tr>
-      </table>
-      <p style="margin-top:14px;color:var(--text-secondary);font-size:0.82em;line-height:1.6">
-        RuCoin не про скорость майнинга. Это единственная крипта, которую принципиально нельзя майнить на GPU или ASIC — только на физических токенах.
-      </p>
-    </div>
-  </main>
+# Установите драйвер JaCarta:
+# Скачайте libjcPKCS11-2.so с сайта производителя
+# и зарегистрируйте модуль:
+echo "module: /usr/lib/libjcPKCS11-2.so" | \
+  sudo tee /usr/share/p11-kit/modules/jacarta.module</div>
 
-  <footer>
-    <p>RuCoin — экспериментальный проект. Не является инвестиционной рекомендацией.</p>
-  </footer>
+    <p style="margin: 20px 0 8px;"><strong>macOS</strong></p>
+    <div class="terminal-block">brew install opensc
+# Драйвер JaCarta для macOS скачайте с сайта Aladdin</div>
+
+    <p style="margin: 20px 0 8px;"><strong>Windows</strong></p>
+    <div class="terminal-block"># Установите OpenSC и драйвер JaCarta
+# PKCS#11 библиотека обычно в C:\Windows\System32\jcPKCS11.dll</div>
+  </section>
+
+  <section class="section">
+    <span class="eyebrow">Запуск</span>
+    <h2>Майнинг в одну команду</h2>
+
+    <p style="margin-bottom: 12px;">Склонируйте репозиторий и запустите скрипт:</p>
+    <div class="terminal-block"><span class="prompt">$</span> git clone https://github.com/22Chestii22/RuCoin.git
+<span class="prompt">$</span> cd RuCoin
+<span class="prompt">$</span> python3 rucoin.py
+
+<span style="color: #6bba6b;">◎ RuCoin Miner v0.1
+[+] Found token: JaCarta-2 GOST (slot 0x1ffff)
+[+] Wallet address: RUC6A2F...B8E1
+[+] Mining block #1 ... hash found!
+[+] Block mined! +0.1 RUC</span></div>
+
+    <p style="margin-top: 16px;">Каждый найденный блок приносит <strong>0.1 RUC</strong>. Сложность майнинга — найти хеш с 4 ведущими нулями.</p>
+  </section>
+
+  <section class="section">
+    <span class="eyebrow">Онлайн кошелёк</span>
+    <h2>Следите за балансом в браузере</h2>
+    <p class="subtitle" style="margin-bottom: 20px;">
+      Необязательно сидеть за компьютером с токеном, чтобы проверить счёт.
+      Откройте кошелёк на телефоне, введите seed-фразу — и вы увидите свои монеты.
+    </p>
+    <a href="/wallet" class="btn">Открыть кошелёк</a>
+  </section>
+</main>
+
+<footer>
+  © 2026 RuCoin · Сделано с мыслью о приватности
+  <br><span style="font-family: var(--mono); font-size: 0.9em;">◎ R</span>
+</footer>
+
 </body>
 </html>

@@ -4,80 +4,110 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RuCoin — криптовалюта на USB-токенах</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+  <style>
+    .hero-sub { font-family: var(--serif); font-style: italic; font-size: 1.2em; color: var(--text-secondary); }
+    .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 48px 0; }
+    .bento-grid .card:first-child { grid-column: 1 / -1; }
+    .bento-grid .card { padding: 32px; }
+    .spec-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.88em; }
+    .spec-item:last-child { border-bottom: none; }
+    .spec-item dt { color: var(--text-secondary); font-family: var(--mono); font-size: 0.85em; }
+    .spec-item dd { font-weight: 450; }
+    .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
+    @media (max-width: 640px) { .bento-grid { grid-template-columns: 1fr; } }
+    .welcome-message { font-size: 1em; line-height: 1.8; max-width: 640px; margin: 0 auto; text-align: center; }
+  </style>
 </head>
 <body>
-  <header>
-    <nav>
-      <a href="/" class="logo">RuCoin <span>/</span></a>
-      <a href="/wallet">Кошелёк</a>
-      <a href="/mine">Майнинг</a>
-    </nav>
-  </header>
 
-  <main>
-    <div class="hero fade-up">
-      <p class="eyebrow">Proof-of-Streebog</p>
-      <h1>Первая криптовалюта,<br>которую майнят <span style="color:var(--text-secondary)">USB-токенами</span></h1>
-      <p>RuCoin использует российский хэш Стрибог вместо SHA-256. Майнинг возможен только на физических токенах с аппаратной криптографией.</p>
-      <a href="/mine" class="btn">Начать майнить →</a>
+<header>
+  <nav>
+    <a href="/" class="logo">◎ RuCoin <span>/ ruc</span></a>
+    <a href="/wallet" class="nav-link">Кошелёк</a>
+    <a href="/mine" class="nav-link">Майнинг</a>
+    <a href="https://github.com/22Chestii22/RuCoin" class="nav-link" target="_blank">GitHub</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <h1 class="fade-up">Криптовалюта, которую можно&nbsp;потрогать</h1>
+    <p class="hero-sub fade-up delay-1">RuCoin добывается на USB-токенах JaCarta через аппаратный ГОСТ (Стрибог). Никаких видеокарт и ASIC-ферм.</p>
+    <div class="cta-row fade-up delay-2">
+      <a href="/wallet" class="btn">Создать кошелёк</a>
+      <a href="/mine" class="btn outline">Как майнить</a>
     </div>
+  </section>
 
-    <div class="section fade-up delay-1">
-      <h2>Что это</h2>
-      <p class="subtitle" style="margin-bottom:32px">
-        Вставил токен → запустил `python3 rucoin.py` → майнится на твой кошелёк. Адрес определяется автоматически по чипу.
-      </p>
-      <div class="grid">
-        <div class="card">
-          <h3>Аппаратный Стрибог</h3>
-          <p>Хэширование происходит внутри чипа токена через PKCS#11.</p>
-          <span class="tag">Hardware</span>
+  <section class="section">
+    <div class="bento-grid">
+      <div class="card">
+        <span class="eyebrow">Почему RuCoin</span>
+        <h2>Токен — внутри вашего устройства</h2>
+        <p style="margin-top: 8px;">
+          Кошелёк RuCoin — это не файл на диске, а ключ внутри USB-токена JaCarta.
+          Чтобы отправить транзакцию, нужен физический доступ к токену.
+          Аппаратный hash Стрибог (ГОСТ Р 34.11-2012) делает майнинг на видеокартах и ASIC&shy;ах невозможным по определению.
+        </p>
+      </div>
+      <div class="card">
+        <span class="eyebrow">Скорость</span>
+        <div style="font-family: var(--serif); font-size: 2.6em; font-weight: 450; letter-spacing: -0.03em; margin-top: 4px;">~0.1 H/s</div>
+        <p style="margin-top: 4px;">Один блок каждые 8-9 секунд. Это не майнинг-ферма — это философия.</p>
+      </div>
+      <div class="card">
+        <span class="eyebrow">Технология</span>
+        <dl class="spec-item"><dt>Алгоритм</dt><dd>Стрибог (Streebog)</dd></dl>
+        <dl class="spec-item"><dt>Токен</dt><dd>JaCarta (Aladdin)</dd></dl>
+        <dl class="spec-item"><dt>Сеть</dt><dd>RuCoin</dd></dl>
+        <dl class="spec-item"><dt>Язык</dt><dd>Python, cross-platform</dd></dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <span class="eyebrow">Как это работает</span>
+    <h2>Три шага до первой монеты</h2>
+    <div class="steps" style="margin-top: 32px; max-width: 640px;">
+      <div class="step">
+        <div class="num">1</div>
+        <div class="step-body">
+          <strong>Вставьте USB-токен</strong>
+          <p>JaCarta или любой PKCS#11-совместимый токен с поддержкой Стрибога.</p>
         </div>
-        <div class="card">
-          <h3>Ключ в кремнии</h3>
-          <p>Приватный ключ внутри чипа, никогда не извлекается. Адрес читается сам.</p>
-          <span class="tag green">Non-Extractable</span>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <div class="step-body">
+          <strong>Запустите майнер</strong>
+          <p><code>python3 rucoin.py</code> — остальное скрипт сделает сам. Он найдёт токен, считает ключи и начнёт майнинг.</p>
         </div>
-        <div class="card">
-          <h3>Пост-квант</h3>
-          <p>Стрибог (ГОСТ Р 34.11-2012) устойчив к квантовым атакам.</p>
-          <span class="tag">Post-Quantum</span>
-        </div>
-        <div class="card">
-          <h3>Plug & Mine</h3>
-          <p>Никакой настройки. Вставил, запустил, майнишь. OS: всё, что с Python.</p>
-          <span class="tag red">Cross-Platform</span>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <div class="step-body">
+          <strong>Монеты поступают в кошелёк</strong>
+          <p>Откройте эту же страницу на телефоне — создайте кошелёк и смотрите баланс.</p>
         </div>
       </div>
     </div>
+  </section>
 
-    <div class="section fade-up delay-3">
-      <h2>Характеристики</h2>
-      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
-        <div class="card">
-          <p class="eyebrow" style="margin-bottom:6px">Алгоритм</p>
-          <p style="color:var(--text);font-weight:500">Стрибог-256</p>
-        </div>
-        <div class="card">
-          <p class="eyebrow" style="margin-bottom:6px">Консенсус</p>
-          <p style="color:var(--text);font-weight:500">Proof-of-Streebog</p>
-        </div>
-        <div class="card">
-          <p class="eyebrow" style="margin-bottom:6px">Эмиссия</p>
-          <p style="color:var(--text);font-weight:500">21 000 000 RUC</p>
-        </div>
-        <div class="card">
-          <p class="eyebrow" style="margin-bottom:6px">Сложность</p>
-          <p style="color:var(--text);font-weight:500">3 нуля (адаптивная)</p>
-        </div>
-      </div>
-    </div>
-  </main>
+  <section class="section" style="text-align: center; padding-bottom: 0;">
+    <p class="welcome-message">
+      RuCoin — эксперимент на стыке криптографии, аппаратной безопасности и здравого смысла.<br>
+      Это не очередной шиткоин, а попытка сделать криптовалюту физически-осязаемой.
+    </p>
+  </section>
+</main>
 
-  <footer>
-    <p>RuCoin — экспериментальный проект. Не является инвестиционной рекомендацией.</p>
-  </footer>
+<footer>
+  © 2026 RuCoin · Сделано с мыслью о приватности
+  <br><span style="font-family: var(--mono); font-size: 0.9em;">◎ R</span>
+</footer>
+
 </body>
 </html>
