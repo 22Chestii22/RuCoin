@@ -50,7 +50,7 @@
         <div id="createSection" class="wallet-auth fade-up delay-1">
           <h3>Создать кошелёк</h3>
           <p style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 20px;">Генерирует новую пару ключей прямо в браузере. RSA-2048, экспорт закрытого ключа — только через seed-фразу.</p>
-          <button class="btn" onclick="handleCreate()" id="createBtn">◎ Создать кошелёк</button>
+          <button class="btn" onclick="handleCreate()" id="createBtn">Создать кошелёк</button>
           <div id="createStatus" class="status"></div>
         </div>
 
@@ -66,8 +66,8 @@
         </div>
       </div>
 
-      <div style="max-width: 720px; margin: 32px auto 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; font-size: 0.82em; color: var(--text-secondary);">
-        ⚡ Ключи хранятся в <code>localStorage</code> этого браузера. Очистка кэша или сброс браузера удалит кошелёк без возможности восстановления. <strong>Сохраните seed-фразу!</strong>
+      <div style="max-width: 720px; margin: 32px auto 0; background: rgba(235, 200, 108, 0.04); border: 1px solid rgba(235, 200, 108, 0.12); border-radius: 12px; padding: 20px 24px; text-align: center; font-size: 0.78em; color: var(--text-secondary); line-height: 1.6;">
+        Ключи хранятся в <code style="font-size: 0.95em;">localStorage</code> этого браузера. Очистка кэша или сброс браузера удалит кошелёк без возможности восстановления. <strong style="color: var(--text);">Сохраните seed-фразу!</strong>
       </div>
     </div>
   </section>
@@ -86,16 +86,16 @@
 
           <h3 style="margin-top: 28px;">Адрес кошелька</h3>
           <div class="wallet-addr" id="addressDisplay"></div>
-          <button class="copy-btn" onclick="copyAddress()" style="margin-top: 6px;">📋 Копировать</button>
+          <button class="copy-btn" onclick="copyAddress()" style="margin-top: 6px;">[ копировать ]</button>
 
           <h3 style="margin-top: 28px;">Seed-фраза</h3>
           <div class="mnemonic-area" id="mnemonicDisplay"></div>
-          <button class="copy-btn" onclick="copyMnemonic()">📋 Копировать seed-фразу</button>
-          <p style="font-size: 0.72em; color: var(--error-text); margin-top: 6px;">⚠ Никому не сообщайте seed-фразу. Она даёт полный доступ к вашим монетам.</p>
+          <button class="copy-btn" onclick="copyMnemonic()">[ копировать seed-фразу ]</button>
+          <p style="font-size: 0.7em; color: #EB5C5C; margin-top: 8px; opacity: 0.8;">Никому не сообщайте seed-фразу. Она даёт полный доступ к вашим монетам.</p>
 
           <div class="logout-bar">
             <span style="font-size: 0.78em; color: var(--text-secondary);">Кошелёк загружен</span>
-            <button class="btn outline" onclick="handleLogout()" style="font-size: 0.78em; padding: 6px 14px;">✕ Сбросить кошелёк</button>
+            <button class="btn outline" onclick="handleLogout()" style="font-size: 0.78em; padding: 6px 14px;">Сбросить кошелёк</button>
           </div>
         </div>
 
@@ -122,7 +122,7 @@
               <div style="font-size: 0.75em; color: var(--text-secondary);">
                 Комиссия сети: <span id="feeDisplay">0.1%</span>
               </div>
-              <button class="btn" onclick="handleSend()">✈ Отправить</button>
+              <button class="btn" onclick="handleSend()">Отправить</button>
               <div id="sendStatus" class="status"></div>
             </div>
           </div>
@@ -132,7 +132,7 @@
             <h3 style="margin-bottom: 8px;">Ваш адрес для получения</h3>
             <p style="font-size: 0.82em; color: var(--text-secondary); margin-bottom: 12px;">Покажите этот адрес отправителю, чтобы он перевёл вам RUC.</p>
             <div class="wallet-addr" id="receiveAddress" style="font-size: 0.85em; padding: 16px;"></div>
-            <button class="copy-btn" onclick="copyAddress()">📋 Копировать адрес</button>
+            <button class="copy-btn" onclick="copyAddress()">[ копировать адрес ]</button>
           </div>
 
           <!-- History Tab -->
@@ -205,21 +205,21 @@ async function handleCreate() {
   const btn = document.getElementById('createBtn');
   const status = document.getElementById('createStatus');
   btn.disabled = true;
-  btn.textContent = '⏳ Генерируем ключи…';
+  btn.textContent = 'Генерирую ключи…';
   status.className = 'status info show';
   status.textContent = 'Генерация RSA-2048 пары ключей… Это может занять несколько секунд.';
   try {
     const wallet = await RuCoin.generateWallet();
     RuCoin.saveWallet(wallet);
     status.className = 'status success show';
-    status.textContent = '✅ Кошелёк создан! Сохраните seed-фразу.';
+    status.textContent = 'Кошелёк создан! Сохраните seed-фразу.';
     renderView();
   } catch (e) {
     status.className = 'status error show';
-    status.textContent = '❌ Ошибка: ' + e.message;
+    status.textContent = 'Ошибка: ' + e.message;
   }
   btn.disabled = false;
-  btn.textContent = '◎ Создать кошелёк';
+  btn.textContent = 'Создать кошелёк';
 }
 
 /* ──── Import wallet ──── */
@@ -233,18 +233,18 @@ async function handleImport() {
     return;
   }
   btn.disabled = true;
-  btn.textContent = '⏳ Восстанавливаем…';
+  btn.textContent = 'Восстанавливаю…';
   status.className = 'status info show';
   status.textContent = 'Восстановление кошелька из seed-фразы…';
   try {
     const wallet = await RuCoin.recoverWallet(phrase);
     RuCoin.saveWallet(wallet);
     status.className = 'status success show';
-    status.textContent = '✅ Кошелёк восстановлен!';
+    status.textContent = 'Кошелёк восстановлен!';
     renderView();
   } catch (e) {
     status.className = 'status error show';
-    status.textContent = '❌ Ошибка: ' + e.message;
+    status.textContent = 'Ошибка: ' + e.message;
   }
   btn.disabled = false;
   btn.textContent = 'Восстановить';
@@ -258,11 +258,11 @@ function handleSend() {
   const result = RuCoin.sendRuc(to, amount);
   if (result.error) {
     status.className = 'status error show';
-    status.textContent = '❌ ' + result.error;
+    status.textContent = result.error;
     return;
   }
   status.className = 'status success show';
-  status.textContent = `✅ Отправлено ${result.tx.amount.toFixed(4)} RUC (комиссия: ${result.tx.fee.toFixed(4)} RUC)`;
+  status.textContent = `Отправлено ${result.tx.amount.toFixed(4)} RUC (комиссия: ${result.tx.fee.toFixed(4)} RUC)`;
   document.getElementById('sendTo').value = '';
   document.getElementById('sendAmount').value = '';
   renderView();
@@ -274,7 +274,7 @@ function copyAddress() {
   if (!wallet) return;
   navigator.clipboard.writeText(wallet.address).then(() => {
     const btn = document.querySelector('.copy-btn');
-    if (btn) { btn.textContent = '✓ Скопировано'; setTimeout(() => btn.textContent = '📋 Копировать', 2000); }
+    if (btn) { btn.textContent = '[ скопировано ]'; setTimeout(() => btn.textContent = '[ копировать ]', 2000); }
   });
 }
 
@@ -284,7 +284,7 @@ function copyMnemonic() {
   navigator.clipboard.writeText(wallet.mnemonic).then(() => {
     const btn = document.querySelectorAll('.copy-btn');
     const last = btn[btn.length - 1];
-    if (last) { last.textContent = '✓ Скопировано'; setTimeout(() => last.textContent = '📋 Копировать seed-фразу', 2000); }
+    if (last) { last.textContent = '[ скопировано ]'; setTimeout(() => last.textContent = '[ копировать seed-фразу ]', 2000); }
   });
 }
 
@@ -317,7 +317,7 @@ function renderHistory() {
     const isSend = tx.type === 'send';
     const sign = isSend ? '-' : '+';
     const cls = isSend ? 'negative' : 'positive';
-    const label = isSend ? '→ Отправка' : (tx.type === 'mining' ? '⛏ Майнинг' : '← Получение');
+    const label = isSend ? 'Отправка' : (tx.type === 'mining' ? 'Майнинг' : 'Получение');
     const time = new Date(tx.time).toLocaleString('ru-RU');
     const addr = isSend ? tx.to : (tx.from === 'SYSTEM' ? 'Сеть RuCoin' : tx.from);
     return `<div class="tx-item">
@@ -342,19 +342,28 @@ function renderHistory() {
   const ring = document.querySelector('.cursor-ring');
   if (!dot || !ring) return;
 
-  let mouseX = 0, mouseY = 0;
-  let ringX = 0, ringY = 0;
+  let mouseX = -100, mouseY = -100;
+  let ringX = -100, ringY = -100;
+  ring.style.opacity = '0';
+  dot.style.opacity = '0';
 
   document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
-    dot.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+    dot.style.transform = `translate(${mouseX - 4}px, ${mouseY - 4}px)`;
+    dot.style.opacity = '1';
+    ring.style.opacity = '1';
+  });
+
+  document.addEventListener('mouseleave', () => {
+    ring.style.opacity = '0';
+    dot.style.opacity = '0';
   });
 
   function animateRing() {
     ringX += (mouseX - ringX) * 0.12;
     ringY += (mouseY - ringY) * 0.12;
-    ring.style.transform = `translate(${ringX}px, ${ringY}px)`;
+    ring.style.transform = `translate(${ringX - 18}px, ${ringY - 18}px)`;
     requestAnimationFrame(animateRing);
   }
   animateRing();

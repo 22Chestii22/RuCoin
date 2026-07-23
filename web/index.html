@@ -138,19 +138,28 @@
   const ring = document.querySelector('.cursor-ring');
   if (!dot || !ring) return;
 
-  let mouseX = 0, mouseY = 0;
-  let ringX = 0, ringY = 0;
+  let mouseX = -100, mouseY = -100;
+  let ringX = -100, ringY = -100;
+  ring.style.opacity = '0';
+  dot.style.opacity = '0';
 
   document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
-    dot.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+    dot.style.transform = `translate(${mouseX - 4}px, ${mouseY - 4}px)`;
+    dot.style.opacity = '1';
+    ring.style.opacity = '1';
+  });
+
+  document.addEventListener('mouseleave', () => {
+    ring.style.opacity = '0';
+    dot.style.opacity = '0';
   });
 
   function animateRing() {
     ringX += (mouseX - ringX) * 0.12;
     ringY += (mouseY - ringY) * 0.12;
-    ring.style.transform = `translate(${ringX}px, ${ringY}px)`;
+    ring.style.transform = `translate(${ringX - 18}px, ${ringY - 18}px)`;
     requestAnimationFrame(animateRing);
   }
   animateRing();
